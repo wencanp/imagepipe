@@ -13,16 +13,19 @@ def compress_image(input_path, output_path, quality=60):
     :param output_path: Path where the compressed image will be saved.
     :param quality: Quality of the compressed image (1-100).
     """
+    print(f"🖼️ Celery will save to: {output_path}")
+
     try:
         img = Image.open(input_path)
-        img.save(output_path, "JPEG", quality=quality)
+        img = img.convert("RGB")
+        img.save(output_path, "JPEG", optimize=True, quality=quality)
         return f"Compressed and saved to {output_path}"
     except Exception as e:
         return f"Compression failed: {str(e)}"
     
-if __name__ == '__main__':
-    result = compress_image(
-        input_path='../../gateway/test.jpg',
-        output_path='test_compressed.jpg'
-    )
-    print(result)
+# if __name__ == '__main__':
+#     result = compress_image(
+#         input_path='../../uploads/test.jpg',
+#         output_path='test_compressed.jpg'
+#     )
+#     print(result)
