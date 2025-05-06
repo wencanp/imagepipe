@@ -4,7 +4,7 @@ import os
 
 app = Celery('convert', broker='redis://localhost:6379/0')
 
-@app.task
+@app.task(name="convert_worker.compress_image")
 def compress_image(input_path, output_path, quality=60):
     """
     Compress an image to reduce its file size and outcome format to JPEG.

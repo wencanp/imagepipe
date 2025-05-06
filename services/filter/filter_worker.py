@@ -4,7 +4,7 @@ import os
 
 app = Celery('filter', broker='redis://localhost:6379/0')
 
-@app.task
+@app.task(name="filter_worker.apply_filter")
 def apply_filter(input_path, output_path, filter_type='BLUR'):
     """
     Apply a filter to an image and save the result.

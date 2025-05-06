@@ -3,3 +3,4 @@ __pycache__/
 *.log
 uploads/
 **/test.jpg
+**/test2.png
