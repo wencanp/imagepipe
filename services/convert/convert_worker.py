@@ -13,8 +13,6 @@ def compress_image(input_path, output_path, quality=60):
     :param output_path: Path where the compressed image will be saved.
     :param quality: Quality of the compressed image (1-100).
     """
-    print(f"🖼️ Celery will save to: {output_path}")
-
     try:
         img = Image.open(input_path)
         img = img.convert("RGB")

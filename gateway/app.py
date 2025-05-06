@@ -5,8 +5,10 @@ import os, sys, time
 
 # Add the path to the services directory to the system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/convert")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/filter")))
 
-from worker import compress_image
+from convert_worker import compress_image
+from filter_worker import apply_filter
 
 app = Flask(__name__)
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
@@ -25,23 +27,45 @@ def upload_file():
     save_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(save_path)
 
-    # output path for the compressed image
-    compressed_filename = f"compressed_{file.filename}"
-    compressed_path = os.path.join(UPLOAD_FOLDER, compressed_filename)
-    time.sleep(0.1)  # ensure save image then compress
-    # submit the async task to Celery
-    compress_image.delay(
-        input_path=save_path,
-        output_path=compressed_path,
-        quality=60
-    )
+    process_type = request.form.get('process_type', 'compress')
+    print("📩 Received form:", request.form.to_dict())
+
+    response = {
+        'original': file.filename
+    }
+
+    if process_type == 'filter':
+        filter_type = request.form.get('filter_type', 'BLUR')
+        filtered_filename = f"filtered_{file.filename}"
+        filtered_path = os.path.join(UPLOAD_FOLDER, filtered_filename)
+
+        apply_filter.delay(
+            input_path=save_path,
+            output_path=filtered_path,
+            filter_type=filter_type
+        )
+        response.update({
+            'message': f"Filter '{filter_type}' task submitted",
+            'filtered': filtered_filename
+        })
+    else:
+        # output path for the compressed image
+        compressed_filename = f"compressed_{file.filename}"
+        compressed_path = os.path.join(UPLOAD_FOLDER, compressed_filename)
+        time.sleep(0.1)  # ensure save image then compress
+        # submit the async task to Celery
+        compress_image.delay(
+            input_path=save_path,
+            output_path=compressed_path,
+            quality=60
+        )
+        response.update({
+            'message': "Compression task submitted",
+            'compressed': compressed_filename
+        })
 
 
-    return jsonify({
-        'message': 'File uploaded successfully, processing compression requested',
-        "original": file.filename, 
-        'compressed': compressed_filename
-    }), 200
+    return jsonify(response), 200
 
 
 @app.route('/download/<filename>', methods=['GET'])
