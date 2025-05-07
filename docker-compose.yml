@@ -1,0 +1,52 @@
+services:
+  redis:
+    image: redis
+    container_name: imagepipe-redis
+    ports:
+      - "6379:6379"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: imagepipe-gateway
+    ports:
+      - "5000:5000"
+    command: python gateway/app.py
+    depends_on:
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+
+  worker-compress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: worker-compress
+    command: celery -A services.convert.convert_worker worker -n convert@%h -Q convert_queue --loglevel=info --pool=solo
+    depends_on:
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+
+  worker-filter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: worker-filter
+    command: celery -A services.filter.filter_worker worker -n filter@%h -Q filter_queue --loglevel=info --pool=solo
+    depends_on:
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+
+  worker-ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: worker-ocr
+    command: celery -A services.ocr.ocr_worker worker -n ocr@%h -Q ocr_queue --loglevel=info --pool=solo
+    depends_on:
+      - redis
+    volumes:
+      - ./uploads:/app/uploads

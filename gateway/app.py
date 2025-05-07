@@ -1,7 +1,11 @@
 # app.py: This is the main entry point for the Flask application.
 
 from flask import Flask, request, jsonify, send_from_directory
+from celery.result import AsyncResult
+from celery import Celery
 import os, sys, time
+
+celery_app = Celery('gateway', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
 # Add the path to the services directory to the system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/convert")))
@@ -38,12 +42,12 @@ def upload_file():
         txt_filename = f"{os.path.splitext(file.filename)[0]}.txt"
         txt_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, txt_filename))
 
-        # extract_text.delay(save_path, txt_path)
-        extract_text.apply_async(args=[save_path, txt_path], queue="ocr_queue")
+        task = extract_text.apply_async(args=[save_path, txt_path], queue="ocr_queue")
 
         response.update({
             "message": "OCR task submitted",
-            "text_file": txt_filename
+            "text_file": txt_filename, 
+            "task_id": task.id
         })
 
     elif process_type == 'filter':
@@ -51,38 +55,31 @@ def upload_file():
         filtered_filename = f"filtered_{file.filename}"
         filtered_path = os.path.join(UPLOAD_FOLDER, filtered_filename)
 
-        # apply_filter.delay(
-        #     input_path=save_path,
-        #     output_path=filtered_path,
-        #     filter_type=filter_type
-        # )
-        apply_filter.apply_async(
+        task = apply_filter.apply_async(
             args=[save_path, filtered_path, filter_type],
             queue="filter_queue"
         )
+
         response.update({
             'message': f"Filter '{filter_type}' task submitted",
-            'filtered': filtered_filename
+            'filtered': filtered_filename,
+            'task_id': task.id
         })
         
-    else:
+    elif process_type == 'compress':
         # output path for the compressed image
         compressed_filename = f"compressed_{file.filename}"
         compressed_path = os.path.join(UPLOAD_FOLDER, compressed_filename)
         time.sleep(0.1)  # ensure save image then compress
         # submit the async task to Celery
-        # compress_image.delay(
-        #     input_path=save_path,
-        #     output_path=compressed_path,
-        #     quality=60
-        # )
-        compress_image.apply_async(
-            kwargs={"input_path": save_path, "output_path": compressed_path, "quality": 60},
+        task = compress_image.apply_async(
+            args=[save_path,compressed_path, 60],
             queue="convert_queue"
         )   
         response.update({
             'message': "Compression task submitted",
-            'compressed': compressed_filename
+            'compressed': compressed_filename,
+            'task_id': task.id
         })
 
 
@@ -99,5 +96,22 @@ def download_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/status/<task_id>', methods=['GET'])
+def check_task_status(task_id):
+    result = AsyncResult(task_id, app=celery_app)
+
+    response = {
+        'task_id': task_id,
+        'state': result.state
+    }
+
+    if result.state == 'SUCCESS':
+        response['result'] = result.result
+    elif result.state == 'FAILURE':
+        response['error'] = str(result.result)  
+
+    return jsonify(response), 200
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)

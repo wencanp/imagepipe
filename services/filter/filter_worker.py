@@ -2,7 +2,7 @@ from celery import Celery
 from PIL import Image, ImageFilter
 import os
 
-app = Celery('filter', broker='redis://localhost:6379/0')
+app = Celery('filter', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
 @app.task(name="filter_worker.apply_filter")
 def apply_filter(input_path, output_path, filter_type='BLUR'):

@@ -3,9 +3,9 @@ from PIL import Image
 import pytesseract
 import os
 
-pytesseract.pytesseract.tesseract_cmd = r'D:\Software\Tesseract-OCR\tesseract.exe'  
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'  
 
-app = Celery('ocr', broker='redis://localhost:6379/0')
+app = Celery('ocr', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
 @app.task(name="ocr_worker.extract_text")
 def extract_text(input_path, output_path):
@@ -25,4 +25,5 @@ def extract_text(input_path, output_path):
 
         return f"OCR completed. Output: {output_path}"
     except Exception as e:
-        return f"OCR failed: {e}"
+        return f"OCR failed: {str(e)}"
+    

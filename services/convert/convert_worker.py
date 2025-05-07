@@ -1,8 +1,7 @@
 from celery import Celery
 from PIL import Image
-import os
 
-app = Celery('convert', broker='redis://localhost:6379/0')
+app = Celery('convert', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
 @app.task(name="convert_worker.compress_image")
 def compress_image(input_path, output_path, quality=60):
@@ -20,10 +19,3 @@ def compress_image(input_path, output_path, quality=60):
         return f"Compressed and saved to {output_path}"
     except Exception as e:
         return f"Compression failed: {str(e)}"
-    
-# if __name__ == '__main__':
-#     result = compress_image(
-#         input_path='../../uploads/test.jpg',
-#         output_path='test_compressed.jpg'
-#     )
-#     print(result)
