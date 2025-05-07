@@ -1,5 +1,6 @@
 from celery import Celery
 from PIL import Image, ImageFilter
+from utils.s3_client import upload_file_to_s3
 import os
 
 app = Celery('filter', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
@@ -29,6 +30,10 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
             raise ValueError(f"Unknown filter type: {filter_type}")
 
         img.save(output_path, "JPEG", optimize=True, quality=95)
-        return f"{filter_type} applied and saved to {output_path}"
+        url = upload_file_to_s3(output_path, f"Filtered/{os.path.basename(output_path)}")
+        return {
+            "message": f"'{filter_type}' applied and uploaded",
+            "url": url
+        }
     except Exception as e:
         return f"Filter failed: {str(e)}"

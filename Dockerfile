@@ -13,3 +13,5 @@ RUN apt-get update && apt-get install -y tesseract-ocr
 
 # Command to run Celery Worker
 CMD ["python", "gateway/app.py"]
+
+ENV PYTHONPATH=/app

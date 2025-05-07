@@ -1,6 +1,7 @@
 from celery import Celery
 from PIL import Image
 import pytesseract
+from utils.s3_client import upload_file_to_s3
 import os
 
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'  
@@ -23,7 +24,11 @@ def extract_text(input_path, output_path):
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(text)
 
-        return f"OCR completed. Output: {output_path}"
+        url = upload_file_to_s3(output_path, f"OCR/{os.path.basename(output_path)}")
+        return {
+            "message": "OCR completed and uploaded",
+            "url": url
+        }
     except Exception as e:
         return f"OCR failed: {str(e)}"
     

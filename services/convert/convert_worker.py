@@ -1,5 +1,7 @@
 from celery import Celery
 from PIL import Image
+from utils.s3_client import upload_file_to_s3
+import os
 
 app = Celery('convert', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
@@ -16,6 +18,10 @@ def compress_image(input_path, output_path, quality=60):
         img = Image.open(input_path)
         img = img.convert("RGB")
         img.save(output_path, "JPEG", optimize=True, quality=quality)
-        return f"Compressed and saved to {output_path}"
+        url = upload_file_to_s3(output_path, f"compressed/{os.path.basename(output_path)}")
+        return {
+            "message": "Compressed and uploaded",
+            "url": url
+        }
     except Exception as e:
         return f"Compression failed: {str(e)}"

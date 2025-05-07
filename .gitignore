@@ -4,3 +4,5 @@ __pycache__/
 uploads/
 **/test.jpg
 **/test2.png
+data/
+minio_data/
