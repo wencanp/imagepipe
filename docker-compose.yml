@@ -50,6 +50,18 @@ services:
       - redis
     volumes:
       - ./uploads:/app/uploads
+  
+  worker-cleaner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: worker-cleaner
+    command: celery -A services.cleaner.cleaner_worker worker -n cleaner@%h -Q cleaner_queue --loglevel=info --pool=solo
+    depends_on:
+      - redis
+      - minio
+    volumes:
+      - ./uploads:/app/uploads
 
   minio:
     image: minio/minio

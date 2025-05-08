@@ -28,10 +28,12 @@ celery_app = Celery('gateway', broker='redis://redis:6379/0', backend="redis://r
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/convert")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/filter")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/ocr")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/cleaner")))
 
 from convert_worker import convert_image
 from filter_worker import apply_filter
 from ocr_worker import extract_text
+from cleaner_worker import clean_expired_files
 
 app = Flask(__name__)
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
@@ -144,6 +146,15 @@ def check_task_status(task_id):
         response['error'] = str(result.result)  
 
     return jsonify(response), 200
+
+
+@app.route('/cleanup', methods=['POST'])
+def trigger_cleanup():
+    task = clean_expired_files.apply_async(queue="cleaner_queue")
+    return jsonify({
+        "message": "Cleanup task triggered", 
+        "task_id": task.id
+    }), 200
 
 
 if __name__ == "__main__":

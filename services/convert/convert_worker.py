@@ -5,7 +5,7 @@ import os
 
 app = Celery('convert', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
-@app.task(name="convert_worker.conveert_image")
+@app.task(name="convert_worker.convert_image")
 def convert_image(input_path, output_path, convert_type, quality=60):
     """
     Compress and convert an image to reduce its file size and  change outcome format.
