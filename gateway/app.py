@@ -29,7 +29,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../serv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/filter")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/ocr")))
 
-from convert_worker import compress_image
+from convert_worker import convert_image
 from filter_worker import apply_filter
 from ocr_worker import extract_text
 
@@ -58,7 +58,7 @@ def upload_file():
     save_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(save_path)
 
-    process_type = request.form.get('process_type', 'compress')
+    process_type = request.form.get('process_type', 'convert')
     response = {
         'original': file.filename
     }
@@ -76,34 +76,42 @@ def upload_file():
         })
 
     elif process_type == 'filter':
+        # request filter_type
         filter_type = request.form.get('filter_type', 'BLUR')
+        
+        # output path for the filtered image
         filtered_filename = f"filtered_{file.filename}"
         filtered_path = os.path.join(UPLOAD_FOLDER, filtered_filename)
 
+        # submit the async task to Celery
         task = apply_filter.apply_async(
             args=[save_path, filtered_path, filter_type],
             queue="filter_queue"
         )
-
         response.update({
             'message': f"Filter '{filter_type}' task submitted",
             'filtered': filtered_filename,
             'task_id': task.id
         })
         
-    elif process_type == 'compress':
-        # output path for the compressed image
-        compressed_filename = f"compressed_{file.filename}"
-        compressed_path = os.path.join(UPLOAD_FOLDER, compressed_filename)
-        time.sleep(0.1)  # ensure save image then compress
+    elif process_type == 'convert': 
+        # request convert_type and quality
+        convert_type = request.form.get('convert_type', os.path.splitext(file.filename)[-1])
+        quality = request.form.get('quality', 60)
+
+        # output path for the converted image
+        converted_filename = f"converted_{os.path.splitext(file.filename)[0]}{convert_type}"
+        converted_path = os.path.join(UPLOAD_FOLDER, converted_filename)
+        time.sleep(0.1)  # ensure save image then convert
+
         # submit the async task to Celery
-        task = compress_image.apply_async(
-            args=[save_path,compressed_path, 60],
+        task = convert_image.apply_async(
+            args=[save_path, converted_path, convert_type, quality],
             queue="convert_queue"
         )   
         response.update({
-            'message': "Compression task submitted",
-            'compressed': compressed_filename,
+            'message': "conversion task submitted",
+            'converted': converted_filename,
             'task_id': task.id
         })
 
