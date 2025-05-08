@@ -9,7 +9,8 @@ const StatusDisplay = ({ taskId }) => {
 
     const interval = setInterval(async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/status/${taskId}`);
+        // const res = await axios.get(`http://localhost:5000/status/${taskId}`);
+        const res = await axios.get(`/api/status/${taskId}`);
         setStatus(res.data);
         if (res.data.state === 'SUCCESS' || res.data.state === 'FAILURE') {
           clearInterval(interval);
@@ -27,7 +28,7 @@ const StatusDisplay = ({ taskId }) => {
 
   return (
     <div className="mt-4">
-      <p>Status：{status.state}</p>
+      <p>Status: {status.state}</p>
       {status.result && (
         <a href={status.result.url || status.result} target="_blank" rel="noreferrer" className="text-blue-600 underline">
           Download the result

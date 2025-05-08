@@ -15,7 +15,8 @@ const UploadForm = ({ onTaskSubmitted }) => {
     if (processType === 'filter') formData.append('filter_type', 'SHARPEN');
 
     try {
-      const res = await axios.post('http://localhost:5000/upload', formData);
+      // const res = await axios.post('http://localhost:5000/upload', formData);
+      const res = await axios.post("/api/upload", formData);
       onTaskSubmitted(res.data.task_id);
     } catch (err) {
       console.error(err);

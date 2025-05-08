@@ -1,9 +1,26 @@
 # app.py: This is the main entry point for the Flask application.
 
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+
 from celery.result import AsyncResult
 from celery import Celery
 import os, sys, time
+
+app = Flask(__name__)
+
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Access-Control-Allow-Origin'
+# # 配置 CORS 选项
+# cors_options = {
+#     "origins": "http://localhost:3000",  # 允许的前端地址
+#     "supports_credentials": True,       # 允许发送 cookies 或其他凭据
+#     "methods": ["GET", "POST", "OPTIONS"],  # 允许的 HTTP 方法
+#     "allow_headers": ["Content-Type", "Authorization"],  # 允许的请求头
+# }
+
+# # 启用 CORS 并应用选项
+# CORS(app, resources={r"/*": cors_options})
 
 celery_app = Celery('gateway', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
@@ -21,8 +38,16 @@ UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uplo
 # UPLOAD_FOLDER = '../uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['POST', 'OPTIONS'])
 def upload_file():
+    if request.method == 'OPTIONS':
+        # 处理预检请求
+        response = jsonify({'message': 'CORS preflight'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        return response, 200
+    
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     
