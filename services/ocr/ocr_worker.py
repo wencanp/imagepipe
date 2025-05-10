@@ -1,12 +1,16 @@
-from celery import Celery
+from celery import Celery, current_task
 from PIL import Image
 import pytesseract
 from utils.s3_client import upload_file_to_s3
+from database.models import TaskRecord, db
 import os
+from gateway.app_factory import create_app
 
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'  
 
 app = Celery('ocr', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+
+flask_app = create_app()
 
 @app.task(name="ocr_worker.extract_text")
 def extract_text(input_path, output_path):
@@ -25,10 +29,31 @@ def extract_text(input_path, output_path):
             f.write(text)
 
         url = upload_file_to_s3(output_path, f"OCR/{os.path.basename(output_path)}")
+
+        with flask_app.app_context():
+            task_id = current_task.request.id
+            task_record = TaskRecord.query.get(task_id)
+            if task_record:
+                task_record.status = 'SUCCESS'
+                task_record.result_url = url
+                db.session.commit()
+            else:
+                return {"error": "Task record not found"}
+
         return {
             "message": "OCR completed and uploaded",
             "url": url
         }
     except Exception as e:
+        # ensure app context and task_record existence
+        task_record = None
+        try:
+            with flask_app.app_context():
+                task_id = current_task.request.id
+                task_record = TaskRecord.query.get(task_id)
+                if task_record:
+                    task_record.status = 'FAILURE'
+                    db.session.commit()
+        except Exception:
+            pass
         return f"OCR failed: {str(e)}"
-    

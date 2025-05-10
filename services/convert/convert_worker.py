@@ -1,9 +1,13 @@
-from celery import Celery
+from celery import Celery, current_task
 from PIL import Image, UnidentifiedImageError
 from utils.s3_client import upload_file_to_s3
+from database.models import TaskRecord, db
+from gateway.app_factory import create_app
 import os
 
 app = Celery('convert', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+
+flask_app = create_app()
 
 @app.task(name="convert_worker.convert_image")
 def convert_image(input_path, output_path, convert_type, quality=60):
@@ -46,9 +50,30 @@ def convert_image(input_path, output_path, convert_type, quality=60):
 
         # Upload the converted file to S3
         url = upload_file_to_s3(output_path, f"convert/{os.path.basename(output_path)}")
+
+        with flask_app.app_context():
+            task_id = current_task.request.id
+            task_record = TaskRecord.query.get(task_id)
+            if task_record:
+                task_record.status = 'SUCCESS'
+                task_record.result_url = url
+                db.session.commit()
+            else:
+                return {"error": "Task record not found"}
+
         return {
             "message": "Converted and uploaded",
             "url": url
         }
     except Exception as e:
+        task_record = None
+        try:
+            with flask_app.app_context():
+                task_id = current_task.request.id
+                task_record = TaskRecord.query.get(task_id)
+                if task_record:
+                    task_record.status = 'FAILURE'
+                    db.session.commit()
+        except Exception:
+            pass
         return f"Cnversion failed: {str(e)}"

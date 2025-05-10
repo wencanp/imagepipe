@@ -17,6 +17,7 @@ services:
       - redis
     volumes:
       - ./uploads:/app/uploads
+      - ./instance:/app/instance
 
   worker-compress:
     build:
@@ -28,6 +29,7 @@ services:
       - redis
     volumes:
       - ./uploads:/app/uploads
+      - ./instance:/app/instance
 
   worker-filter:
     build:
@@ -39,6 +41,7 @@ services:
       - redis
     volumes:
       - ./uploads:/app/uploads
+      - ./instance:/app/instance
 
   worker-ocr:
     build:
@@ -50,6 +53,7 @@ services:
       - redis
     volumes:
       - ./uploads:/app/uploads
+      - ./instance:/app/instance
   
   worker-cleaner:
     build:
@@ -62,6 +66,7 @@ services:
       - minio
     volumes:
       - ./uploads:/app/uploads
+      - ./instance:/app/instance
 
   minio:
     image: minio/minio

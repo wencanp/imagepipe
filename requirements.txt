@@ -5,3 +5,4 @@ redis
 pillow
 pytesseract
 boto3
+flask_sqlalchemy

@@ -1,26 +1,13 @@
 # app.py: This is the main entry point for the Flask application.
 
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-
+from flask import request, jsonify, send_from_directory
+from database.models import db, TaskRecord
 from celery.result import AsyncResult
 from celery import Celery
 import os, sys, time
+from gateway.app_factory import create_app
 
-app = Flask(__name__)
-
-cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Access-Control-Allow-Origin'
-# # 配置 CORS 选项
-# cors_options = {
-#     "origins": "http://localhost:3000",  # 允许的前端地址
-#     "supports_credentials": True,       # 允许发送 cookies 或其他凭据
-#     "methods": ["GET", "POST", "OPTIONS"],  # 允许的 HTTP 方法
-#     "allow_headers": ["Content-Type", "Authorization"],  # 允许的请求头
-# }
-
-# # 启用 CORS 并应用选项
-# CORS(app, resources={r"/*": cors_options})
+app = create_app()
 
 celery_app = Celery('gateway', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
@@ -35,9 +22,7 @@ from filter_worker import apply_filter
 from ocr_worker import extract_text
 from cleaner_worker import clean_expired_files
 
-app = Flask(__name__)
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
-# UPLOAD_FOLDER = '../uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
@@ -69,7 +54,17 @@ def upload_file():
         txt_filename = f"{os.path.splitext(file.filename)[0]}.txt"
         txt_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, txt_filename))
 
+        # submit the async task to Celery
         task = extract_text.apply_async(args=[save_path, txt_path], queue="ocr_queue")
+        # save the task record to the database
+        task_record = TaskRecord(
+            id=task.id,
+            filename=file.filename,
+            process_type=process_type,
+            status='PENDING'
+        )
+        db.session.add(task_record)
+        db.session.commit()
 
         response.update({
             "message": "OCR task submitted",
@@ -90,6 +85,16 @@ def upload_file():
             args=[save_path, filtered_path, filter_type],
             queue="filter_queue"
         )
+        # save the task record to the database
+        task_record = TaskRecord(
+            id=task.id,
+            filename=file.filename,
+            process_type=process_type,
+            status='PENDING'
+        )
+        db.session.add(task_record)
+        db.session.commit()
+
         response.update({
             'message': f"Filter '{filter_type}' task submitted",
             'filtered': filtered_filename,
@@ -110,13 +115,22 @@ def upload_file():
         task = convert_image.apply_async(
             args=[save_path, converted_path, convert_type, quality],
             queue="convert_queue"
-        )   
+        )
+        # save the task record to the database
+        task_record = TaskRecord(
+            id=task.id,
+            filename=file.filename,
+            process_type=process_type,
+            status='PENDING'
+        )
+        db.session.add(task_record)
+        db.session.commit()
+
         response.update({
-            'message': "conversion task submitted",
+            'message': "Conversion task submitted",
             'converted': converted_filename,
             'task_id': task.id
         })
-
 
     return jsonify(response), 200
 
@@ -133,23 +147,22 @@ def download_file(filename):
 
 @app.route('/status/<task_id>', methods=['GET'])
 def check_task_status(task_id):
-    result = AsyncResult(task_id, app=celery_app)
+    record = TaskRecord.query.get(task_id)
+    if not record:
+        return jsonify({'error': 'Task not found'}), 404
 
     response = {
         'task_id': task_id,
-        'state': result.state
+        'state': record.state,
+        'filename': record.filename,
+        'result_url': record.result_url
     }
-
-    if result.state == 'SUCCESS':
-        response['result'] = result.result
-    elif result.state == 'FAILURE':
-        response['error'] = str(result.result)  
-
     return jsonify(response), 200
 
 
 @app.route('/cleanup', methods=['POST'])
 def trigger_cleanup():
+    # Trigger the Celery task to clean up expired files
     task = clean_expired_files.apply_async(queue="cleaner_queue")
     return jsonify({
         "message": "Cleanup task triggered", 

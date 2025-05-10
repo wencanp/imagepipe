@@ -1,7 +1,11 @@
-from celery import Celery
+from celery import Celery, current_task
 from PIL import Image, ImageFilter, UnidentifiedImageError
 from utils.s3_client import upload_file_to_s3
+from database.models import TaskRecord, db
 import os
+from gateway.app_factory import create_app
+
+flask_app = create_app()
 
 app = Celery('filter', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
@@ -54,9 +58,30 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
 
         # Upload the filtered file to S3
         url = upload_file_to_s3(output_path, f"filter/{os.path.basename(output_path)}")
+
+        with flask_app.app_context():
+            task_id = current_task.request.id
+            task_record = TaskRecord.query.get(task_id)
+            if task_record:
+                task_record.status = 'SUCCESS'
+                task_record.result_url = url
+                db.session.commit()
+            else:
+                return {"error": "Task record not found"}
+
         return {
             "message": f"'{filter_type}' applied and image uploaded",
             "url": url
         }
     except Exception as e:
+        task_record = None
+        try:
+            with flask_app.app_context():
+                task_id = current_task.request.id
+                task_record = TaskRecord.query.get(task_id)
+                if task_record:
+                    task_record.status = 'FAILURE'
+                    db.session.commit()
+        except Exception:
+            pass
         return f"Filter failed: {str(e)}"
