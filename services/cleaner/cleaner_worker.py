@@ -1,6 +1,7 @@
 from celery import Celery
 from utils.s3_client import s3, BUCKET_NAME
 from datetime import datetime, timedelta, timezone
+from celery.schedules import crontab
 
 app = Celery('cleaner', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
@@ -26,3 +27,12 @@ def clean_expired_files():
             "status": "failed",
             "error": str(e)
         }
+
+# auto scheduling for cleaner
+app.conf.beat_schedule = {
+    'run-cleaner-every-hour': {
+        'task': 'cleaner_worker.clean_expired_files',
+        'schedule': crontab(minute=0, hour='*'),  # every hour
+    }
+}
+app.conf.timezone = 'UTC'

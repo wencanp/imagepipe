@@ -60,7 +60,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: worker-cleaner
-    command: celery -A services.cleaner.cleaner_worker worker -n cleaner@%h -Q cleaner_queue --loglevel=info --pool=solo
+    command: celery -A services.cleaner.cleaner_worker worker -B -n cleaner@%h -Q cleaner_queue --loglevel=info --pool=solo
     depends_on:
       - redis
       - minio
