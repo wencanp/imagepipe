@@ -155,6 +155,7 @@ def check_task_status(task_id):
         'task_id': task_id,
         'state': record.state,
         'filename': record.filename,
+        'error_message': record.error_message,
         'result_url': record.result_url
     }
     return jsonify(response), 200

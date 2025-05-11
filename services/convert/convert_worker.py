@@ -57,6 +57,7 @@ def convert_image(input_path, output_path, convert_type, quality=60):
             if task_record:
                 task_record.status = 'SUCCESS'
                 task_record.result_url = url
+                task_record.error_message = None
                 db.session.commit()
             else:
                 return {"error": "Task record not found"}
@@ -73,6 +74,7 @@ def convert_image(input_path, output_path, convert_type, quality=60):
                 task_record = TaskRecord.query.get(task_id)
                 if task_record:
                     task_record.status = 'FAILURE'
+                    task_record.error_message = str(e)
                     db.session.commit()
         except Exception:
             pass

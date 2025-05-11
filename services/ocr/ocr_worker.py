@@ -36,6 +36,7 @@ def extract_text(input_path, output_path):
             if task_record:
                 task_record.status = 'SUCCESS'
                 task_record.result_url = url
+                task_record.error_message = None
                 db.session.commit()
             else:
                 return {"error": "Task record not found"}
@@ -53,6 +54,7 @@ def extract_text(input_path, output_path):
                 task_record = TaskRecord.query.get(task_id)
                 if task_record:
                     task_record.status = 'FAILURE'
+                    task_record.error_message = str(e)
                     db.session.commit()
         except Exception:
             pass

@@ -10,5 +10,6 @@ class TaskRecord(db.Model):
     filename = db.Column(db.String(256))
     process_type = db.Column(db.String(64))
     status = db.Column(db.String(64))  # PENDING, SUCCESS, FAILURE
+    error_message = db.Column(db.String(512), nullable=True)
     result_url = db.Column(db.String(512))
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
