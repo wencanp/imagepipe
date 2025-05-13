@@ -8,8 +8,7 @@ import os
 
 app = Celery('cleaner', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
-EXPIRATION_HOURS = 0.0167  # 1分钟 = 1/60小时 ≈ 0.0167 for testing
-# EXPIRATION_HOURS = 12
+EXPIRATION_HOURS = 12
 
 @app.task(name="cleaner_worker.clean_expired_files")
 def clean_expired_files():
@@ -69,8 +68,7 @@ def clean_expired_files():
 app.conf.beat_schedule = {
     'run-cleaner-every-hour': {
         'task': 'cleaner_worker.clean_expired_files',
-        # 'schedule': crontab(minute=0, hour='*'),  # every hour
-        'schedule': crontab(),  # min for testing
+        'schedule': crontab(minute=0, hour='*'),  # every hour
         'options': {'queue': 'cleaner_queue'}
     }
 }

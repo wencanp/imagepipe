@@ -140,6 +140,17 @@ def download_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 
+@app.route('/download/task/<task_id>', methods=['GET'])
+def download_by_task_id(task_id):
+    record = TaskRecord.query.get(task_id)
+    if not record:
+        return jsonify({'error': 'Task not found'}), 404
+    file_path = os.path.join(UPLOAD_FOLDER, record.filename)
+    if not os.path.exists(file_path):
+        return jsonify({'error': 'File not found'}), 404
+    return send_from_directory(UPLOAD_FOLDER, record.filename, as_attachment=True)
+
+
 @app.route('/status/<task_id>', methods=['GET'])
 def check_task_status(task_id):
     record = TaskRecord.query.get(task_id)
@@ -148,7 +159,7 @@ def check_task_status(task_id):
 
     response = {
         'task_id': task_id,
-        'state': record.state,
+        'status': record.status,
         'filename': record.filename,
         'error_message': record.error_message,
         'result_url': record.result_url
