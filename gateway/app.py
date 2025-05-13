@@ -68,6 +68,7 @@ def upload_file():
 
         response.update({
             "message": "OCR task submitted",
+            "original": file.filename,
             "text_file": txt_filename, 
             "task_id": task.id
         })
@@ -97,6 +98,7 @@ def upload_file():
 
         response.update({
             'message': f"Filter '{filter_type}' task submitted",
+            "original": file.filename,
             'filtered': filtered_filename,
             'task_id': task.id
         })
@@ -128,6 +130,7 @@ def upload_file():
 
         response.update({
             'message': "Conversion task submitted",
+            'original': file.filename,
             'converted': converted_filename,
             'task_id': task.id
         })
