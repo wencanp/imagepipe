@@ -37,19 +37,22 @@ def upload_file():
         return response, 200
     
     if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] File not found'
+        }), 400
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] No selected file'
+        }), 400
 
     save_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(save_path)
 
     process_type = request.form.get('process_type', 'convert')
-    response = {
-        'original': file.filename
-    }
 
     if process_type == 'ocr':
         task_id = str(uuid.uuid4())
@@ -67,12 +70,11 @@ def upload_file():
         db.session.add(task_record)
         db.session.commit()
 
-        response.update({
-            "message": "OCR task submitted",
-            "original": file.filename,
-            "text_file": txt_filename, 
-            "task_id": task_id
-        })
+        return jsonify({
+            'success': True,
+            'message': '[SUCCESS] OCR task submitted',
+            'task_id': task_id
+        }), 200
 
     elif process_type == 'filter':
         filter_type = request.form.get('filter_type', 'BLUR')
@@ -92,12 +94,11 @@ def upload_file():
         db.session.add(task_record)
         db.session.commit()
 
-        response.update({
-            'message': f"Filter '{filter_type}' task submitted",
-            "original": file.filename,
-            'filtered': filtered_filename,
+        return jsonify({
+            'success': True,
+            'message': f"[SUCCESS] Filter '{filter_type}' task submitted",
             'task_id': task_id
-        })
+        }), 200
         
     elif process_type == 'convert': 
         convert_type = request.form.get('convert_type', os.path.splitext(file.filename)[-1])
@@ -120,14 +121,16 @@ def upload_file():
         db.session.add(task_record)
         db.session.commit()
 
-        response.update({
-            'message': "Conversion task submitted",
-            'original': file.filename,
-            'converted': converted_filename,
+        return jsonify({
+            'success': True,
+            'message': '[SUCCESS] Conversion task submitted',
             'task_id': task_id
-        })
+        }), 200
 
-    return jsonify(response), 200
+    return jsonify({
+        'success': False,
+        'message': '[FAILURE] Unknown process type'
+    }), 400
 
 
 @app.route('/download/<filename>', methods=['GET'])
@@ -135,7 +138,10 @@ def download_file(filename):
     file_path = os.path.join(UPLOAD_FOLDER, filename)
 
     if not os.path.exists(file_path):
-        return jsonify({'error': 'File not found'}), 404
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] File not found'
+        }), 404
 
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
@@ -144,10 +150,16 @@ def download_file(filename):
 def download_by_task_id(task_id):
     record = TaskRecord.query.get(task_id)
     if not record:
-        return jsonify({'error': 'Task not found'}), 404
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] Task not found'
+        }), 404
     file_path = os.path.join(UPLOAD_FOLDER, record.filename)
     if not os.path.exists(file_path):
-        return jsonify({'error': 'File not found'}), 404
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] File not found'
+        }), 404
     return send_from_directory(UPLOAD_FOLDER, record.filename, as_attachment=True)
 
 
@@ -155,16 +167,16 @@ def download_by_task_id(task_id):
 def check_task_status(task_id):
     record = TaskRecord.query.get(task_id)
     if not record:
-        return jsonify({'error': 'Task not found'}), 404
-
-    response = {
-        'task_id': task_id,
-        'status': record.status,
-        'filename': record.filename,
-        'error_message': record.error_message,
-        'result_url': record.result_url
-    }
-    return jsonify(response), 200
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] Task not found'
+        }), 404
+    status = record.status
+    return jsonify({
+        'success': True,
+        'message': f'[SUCCESS] Task status fetched: {status}',
+        'task_id': task_id
+    }), 200
 
 
 @app.route('/cleanup', methods=['POST'])
@@ -172,8 +184,9 @@ def trigger_cleanup():
     # Trigger the Celery task to clean up expired files
     task = clean_expired_files.apply_async(queue="cleaner_queue")
     return jsonify({
-        "message": "Cleanup task triggered", 
-        "task_id": task.id
+        'success': True,
+        'message': '[SUCCESS] Cleanup task triggered',
+        'task_id': task.id
     }), 200
 
 
