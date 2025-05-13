@@ -3,7 +3,11 @@ from PIL import Image, UnidentifiedImageError
 from utils.s3_client import upload_file_to_s3
 from database.models import TaskRecord, db
 from gateway.app_factory import create_app
-import os
+import os, time
+from celery.utils.log import get_task_logger
+
+start_time = time.time()
+logger = get_task_logger(__name__)
 
 app = Celery('convert', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
@@ -24,6 +28,7 @@ def convert_image(input_path, output_path, convert_type, quality=60):
         try:
             img = Image.open(input_path)
         except UnidentifiedImageError:
+            logger.error(f"Unsupported image format or corrupted file. Task ID: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
             return {
                 "error": "Unsupported image format or corrupted file."
             }
@@ -62,11 +67,13 @@ def convert_image(input_path, output_path, convert_type, quality=60):
             else:
                 return {"error": "Task record not found"}
 
+        logger.info(f"Conversion success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
             "message": "Converted and uploaded",
             "url": url
         }
     except Exception as e:
+        logger.error(f"Conversion failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None
         try:
             with flask_app.app_context():

@@ -1,10 +1,14 @@
-from celery import Celery
+from celery import Celery, current_task
 from utils.s3_client import s3, BUCKET_NAME
 from datetime import datetime, timedelta, timezone
 from celery.schedules import crontab
 from database.models import TaskRecord, db
 from gateway.app_factory import create_app
-import os
+import os, time
+from celery.utils.log import get_task_logger
+
+start_time = time.time()
+logger = get_task_logger(__name__)
 
 app = Celery('cleaner', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
 
@@ -25,17 +29,14 @@ def clean_expired_files():
 
             # Check if the file is older than the expiration time
             if now - last_modified > timedelta(hours=EXPIRATION_HOURS):
-                print(f"Deleting expired file: {key}")
                 try:
                     # Delete the file from S3/minio
                     s3.delete_object(Bucket=BUCKET_NAME, Key=key)
-                    print(f"Deleted expired file: {key}")
 
                     # delete the local copy if it exists
                     local_path = os.path.join('/app/uploads', os.path.basename(key))
                     if os.path.exists(local_path):
                         os.remove(local_path)
-                        print(f"Deleted local file: {local_path}")
                     remove_files.append(key)
 
                     # Delete TaskRecord in the database
@@ -47,18 +48,23 @@ def clean_expired_files():
                             db.session.commit()
                             db_removed.append(record.id)
                 except Exception as e:
-                    print(f"Error deleting file {key}: {e}")
+                    logger.error(f"Error deleting file {key}: {e}. task_id: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
+                    continue
 
         if not remove_files:
+            logger.info("No expired files to clean. task_id: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
             return {
                 "message": "No expired files to clean"
             }
+        
+        logger.info(f"Cleanup completed. Deleted files: {remove_files}. Deleted DB records: {db_removed}. task_id: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
         return {
             "message": "Cleanup completed",
             "deleted_files": remove_files,
             "deleted_db_records": db_removed
         }              
     except Exception as e:
+        logger.error(f"Error during cleanup: {e}. task_id: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
         return {
             "status": "failed",
             "error": str(e)
@@ -75,6 +81,6 @@ app.conf.beat_schedule = {
 app.conf.timezone = 'UTC'
 
 if __name__ == "__main__":
-    print("Cleaner worker launched, executing task...")
+    logger.info("Cleaner worker launched, executing task ... start time [{start_time}]")
     # Execute the task immediately each runtime
     clean_expired_files()

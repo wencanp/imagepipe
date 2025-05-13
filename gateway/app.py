@@ -7,10 +7,18 @@ from celery import Celery
 import os, sys, time
 from gateway.app_factory import create_app
 import uuid
+import logging 
 
 app = create_app()
 
 celery_app = Celery('gateway', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('gateway')
 
 # Add the path to the services directory to the system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../services/convert")))
@@ -36,7 +44,10 @@ def upload_file():
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         return response, 200
     
+    logger.info(f"[UPLOAD] Received upload request from {request.remote_addr}, Type: {request.content_type}")
+
     if 'file' not in request.files:
+        logger.warning(f"[UPLOAD] File not found in request from {request.remote_addr}")
         return jsonify({
             'success': False,
             'message': '[FAILURE] File not found'
@@ -44,6 +55,7 @@ def upload_file():
     
     file = request.files['file']
     if file.filename == '':
+        logger.warning(f"[UPLOAD] No selected file from {request.remote_addr}")
         return jsonify({
             'success': False,
             'message': '[FAILURE] No selected file'
@@ -70,6 +82,7 @@ def upload_file():
         db.session.add(task_record)
         db.session.commit()
 
+        logger.info(f"[UPLOAD] OCR task submitted with ID: {task_id} from {request.remote_addr}")
         return jsonify({
             'success': True,
             'message': '[SUCCESS] OCR task submitted',
@@ -94,6 +107,7 @@ def upload_file():
         db.session.add(task_record)
         db.session.commit()
 
+        logger.info(f"[UPLOAD] Filter task submitted with ID: {task_id} from {request.remote_addr}")
         return jsonify({
             'success': True,
             'message': f"[SUCCESS] Filter '{filter_type}' task submitted",
@@ -121,12 +135,15 @@ def upload_file():
         db.session.add(task_record)
         db.session.commit()
 
+
+        logger.info(f"[UPLOAD] Conversion task submitted with ID: {task_id} from {request.remote_addr}")
         return jsonify({
             'success': True,
             'message': '[SUCCESS] Conversion task submitted',
             'task_id': task_id
         }), 200
 
+    logger.warning(f"[UPLOAD] Unknown process type '{process_type}' from {request.remote_addr}")
     return jsonify({
         'success': False,
         'message': '[FAILURE] Unknown process type'
@@ -138,11 +155,13 @@ def download_file(filename):
     file_path = os.path.join(UPLOAD_FOLDER, filename)
 
     if not os.path.exists(file_path):
+        logger.warning(f"[DOWNLOAD_FILENAME] File '{filename}' not found for download from {request.remote_addr}")
         return jsonify({
             'success': False,
             'message': '[FAILURE] File not found'
         }), 404
 
+    logger.info(f"[DOWNLOAD_FILENAME] File '{filename}' downloaded successful for {request.remote_addr}")
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 
@@ -150,28 +169,38 @@ def download_file(filename):
 def download_by_task_id(task_id):
     record = TaskRecord.query.get(task_id)
     if not record:
+        logger.warning(f"[DOWNLOAD] TaskRecord '{task_id}' not found for download from {request.remote_addr}")
         return jsonify({
             'success': False,
-            'message': '[FAILURE] Task not found'
+            'message': '[FAILURE] TaskRecord not found'
         }), 404
+    
     file_path = os.path.join(UPLOAD_FOLDER, record.filename)
     if not os.path.exists(file_path):
+        logger.warning(f"[DOWNLOAD] File '{record.filename}' not found for download from {request.remote_addr}")
         return jsonify({
             'success': False,
             'message': '[FAILURE] File not found'
         }), 404
+    
+    logger.info(f"[DOWNLOAD] File '{record.filename}' downloaded successful for {request.remote_addr}")
     return send_from_directory(UPLOAD_FOLDER, record.filename, as_attachment=True)
 
 
 @app.route('/status/<task_id>', methods=['GET'])
 def check_task_status(task_id):
+    logger.info(f"[STATUS] Checking status for task ID: {task_id} from {request.remote_addr}")
     record = TaskRecord.query.get(task_id)
     if not record:
+        logger.warning(f"[STATUS] TaskRecord '{task_id}' not found from {request.remote_addr}")
         return jsonify({
             'success': False,
             'message': '[FAILURE] Task not found'
         }), 404
+    
     status = record.status
+
+    logger.info(f"[STATUS] Task ID: {task_id}, Status: {status} from {request.remote_addr}")
     return jsonify({
         'success': True,
         'message': f'[SUCCESS] Task status fetched: {status}',
@@ -181,7 +210,7 @@ def check_task_status(task_id):
 
 @app.route('/cleanup', methods=['POST'])
 def trigger_cleanup():
-    # Trigger the Celery task to clean up expired files
+    logger.info(f"[CLEANUP] Triggering cleanup task")
     task = clean_expired_files.apply_async(queue="cleaner_queue")
     return jsonify({
         'success': True,

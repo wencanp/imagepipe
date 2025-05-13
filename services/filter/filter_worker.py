@@ -2,8 +2,12 @@ from celery import Celery, current_task
 from PIL import Image, ImageFilter, UnidentifiedImageError
 from utils.s3_client import upload_file_to_s3
 from database.models import TaskRecord, db
-import os
+import os, time
+from celery.utils.log import get_task_logger
 from gateway.app_factory import create_app
+
+start_time = time.time()
+logger = get_task_logger(__name__)
 
 flask_app = create_app()
 
@@ -23,6 +27,7 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
         try:
             img = Image.open(input_path)
         except UnidentifiedImageError:
+            logger.error(f"Unsupported image format or corrupted file. Task ID: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
             return {
                 "error": "Unsupported image format or corrupted file."
             }
@@ -35,6 +40,7 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
             'SHARPEN': ImageFilter.SHARPEN
         }
         if filter_type not in filter_mapping:
+            logger.error(f"Unsupported filter type: {filter_type}. Task ID: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
             return {
                 "error": "Unsupported filter type"
             }
@@ -70,11 +76,13 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
             else:
                 return {"error": "Task record not found"}
 
+        logger.info(f"Filter success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
             "message": f"'{filter_type}' applied and image uploaded",
             "url": url
         }
     except Exception as e:
+        logger.error(f"Filter failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None
         try:
             with flask_app.app_context():

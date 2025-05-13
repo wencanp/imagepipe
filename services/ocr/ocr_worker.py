@@ -3,8 +3,12 @@ from PIL import Image
 import pytesseract
 from utils.s3_client import upload_file_to_s3
 from database.models import TaskRecord, db
-import os
+import os, time
 from gateway.app_factory import create_app
+from celery.utils.log import get_task_logger
+
+start_time = time.time()
+logger = get_task_logger(__name__)
 
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'  
 
@@ -41,12 +45,13 @@ def extract_text(input_path, output_path):
             else:
                 return {"error": "Task record not found"}
 
+        logger.info(f"OCR success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
             "message": "OCR completed and uploaded",
             "url": url
         }
     except Exception as e:
-        # ensure app context and task_record existence
+        logger.error(f"OCR failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None
         try:
             with flask_app.app_context():
