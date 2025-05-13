@@ -6,6 +6,7 @@ from celery.result import AsyncResult
 from celery import Celery
 import os, sys, time
 from gateway.app_factory import create_app
+import uuid
 
 app = create_app()
 
@@ -51,15 +52,15 @@ def upload_file():
     }
 
     if process_type == 'ocr':
-        txt_filename = f"{os.path.splitext(file.filename)[0]}.txt"
+        task_id = str(uuid.uuid4())
+        txt_filename = f"{task_id}.txt"
         txt_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, txt_filename))
 
         # submit the async task to Celery
-        task = extract_text.apply_async(args=[save_path, txt_path], queue="ocr_queue")
-        # save the task record to the database
+        task = extract_text.apply_async(args=[save_path, txt_path], queue="ocr_queue", task_id=task_id)
         task_record = TaskRecord(
-            id=task.id,
-            filename=file.filename,
+            id=task_id,
+            filename=txt_filename,
             process_type=process_type,
             status='PENDING'
         )
@@ -70,26 +71,21 @@ def upload_file():
             "message": "OCR task submitted",
             "original": file.filename,
             "text_file": txt_filename, 
-            "task_id": task.id
+            "task_id": task_id
         })
 
     elif process_type == 'filter':
-        # request filter_type
         filter_type = request.form.get('filter_type', 'BLUR')
-        
-        # output path for the filtered image
-        filtered_filename = f"filtered_{file.filename}"
-        filtered_path = os.path.join(UPLOAD_FOLDER, filtered_filename)
 
-        # submit the async task to Celery
+        task_id = str(uuid.uuid4())
+        filtered_filename = f"{task_id}{os.path.splitext(file.filename)[-1]}"
+        filtered_path = os.path.join(UPLOAD_FOLDER, filtered_filename)
         task = apply_filter.apply_async(
-            args=[save_path, filtered_path, filter_type],
-            queue="filter_queue"
+            args=[save_path, filtered_path, filter_type], queue="filter_queue", task_id=task_id
         )
-        # save the task record to the database
         task_record = TaskRecord(
-            id=task.id,
-            filename=file.filename,
+            id=task_id,
+            filename=filtered_filename,
             process_type=process_type,
             status='PENDING'
         )
@@ -100,28 +96,24 @@ def upload_file():
             'message': f"Filter '{filter_type}' task submitted",
             "original": file.filename,
             'filtered': filtered_filename,
-            'task_id': task.id
+            'task_id': task_id
         })
         
     elif process_type == 'convert': 
-        # request convert_type and quality
         convert_type = request.form.get('convert_type', os.path.splitext(file.filename)[-1])
         quality = request.form.get('quality', 60)
 
-        # output path for the converted image
-        converted_filename = f"converted_{os.path.splitext(file.filename)[0]}{convert_type}"
+        task_id = str(uuid.uuid4())
+        converted_filename = f"{task_id}{convert_type}"
         converted_path = os.path.join(UPLOAD_FOLDER, converted_filename)
         time.sleep(0.1)  # ensure save image then convert
 
-        # submit the async task to Celery
         task = convert_image.apply_async(
-            args=[save_path, converted_path, convert_type, quality],
-            queue="convert_queue"
+            args=[save_path, converted_path, convert_type, quality], queue="convert_queue", task_id=task_id
         )
-        # save the task record to the database
         task_record = TaskRecord(
-            id=task.id,
-            filename=file.filename,
+            id=task_id,
+            filename=converted_filename,
             process_type=process_type,
             status='PENDING'
         )
@@ -132,7 +124,7 @@ def upload_file():
             'message': "Conversion task submitted",
             'original': file.filename,
             'converted': converted_filename,
-            'task_id': task.id
+            'task_id': task_id
         })
 
     return jsonify(response), 200
