@@ -34,30 +34,30 @@ const UploadForm = ({ onTaskSubmitted }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white rounded shadow-md">
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} className="block w-full" />
-      <select value={processType} onChange={(e) => setProcessType(e.target.value)} className="block w-full p-2 border rounded">
+    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-sm mx-auto p-4 bg-[#eaf5e3] rounded-xl shadow-md flex flex-col items-center">
+      <input type="file" onChange={(e) => setFile(e.target.files[0])} className="block w-full text-gray-600 bg-white border border-green-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400" />
+      <select value={processType} onChange={(e) => setProcessType(e.target.value)} className="block w-full p-2 border border-green-200 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-900">
         <option value="convert">Convert</option>
         <option value="filter">Filter</option>
         <option value="ocr">OCR</option>
       </select>
       {processType === 'convert' && (
-        <div className="space-y-2">
-          <label className="block">Target format: </label>
-          <select value={convertType} onChange={e => setConvertType(e.target.value)} className="block w-full p-2 border rounded">
+        <div className="space-y-2 w-full">
+          <label className="block text-gray-800 font-medium">Target format</label>
+          <select value={convertType} onChange={e => setConvertType(e.target.value)} className="block w-full p-2 border border-green-200 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-900">
             <option value=".png">PNG</option>
             <option value=".jpeg">JPEG</option>
             <option value=".gif">GIF</option>
             <option value=".bmp">BMP</option>
           </select>
-          <label className="block mt-2">Compress quality (1-95): </label>
-          <input type="number" min="1" max="100" value={quality} onChange={e => setQuality(e.target.value)} className="block w-full p-2 border rounded" />
+          <label className="block mt-2 text-gray-800 font-medium">Compress quality (1-95)</label>
+          <input type="number" min="1" max="100" value={quality} onChange={e => setQuality(e.target.value)} className="block w-full p-2 border border-green-200 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-900" />
         </div>
       )}
       {processType === 'filter' && (
-        <div className="space-y-2">
-          <label className="block">Filter type: </label>
-          <select value={filterType} onChange={e => setFilterType(e.target.value)} className="block w-full p-2 border rounded">
+        <div className="space-y-2 w-full">
+          <label className="block text-gray-800 font-medium">Filter type</label>
+          <select value={filterType} onChange={e => setFilterType(e.target.value)} className="block w-full p-2 border border-green-200 rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-900">
             <option value="BLUR">BLUR</option>
             <option value="CONTOUR">CONTOUR</option>
             <option value="DETAIL">DETAIL</option>
@@ -65,7 +65,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
           </select>
         </div>
       )}
-      <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Upload</button>
+      <button type="submit" className="bg-green-700 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold shadow transition-colors w-full">Upload</button>
     </form>
   );
 };

@@ -203,8 +203,9 @@ def check_task_status(task_id):
     logger.info(f"[STATUS] Task ID: {task_id}, Status: {status} from {request.remote_addr}")
     return jsonify({
         'success': True,
-        'message': f'[SUCCESS] Task status fetched: {status}',
-        'task_id': task_id
+        'message': f'{status}',
+        'task_id': task_id,
+        'url': record.result_url if status == 'SUCCESS' else None
     }), 200
 
 
