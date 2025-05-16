@@ -106,3 +106,16 @@ services:
     depends_on:
       - ui
       - gateway
+
+  postgres:
+    image: postgres:15
+    container_name: imagepipe-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: imagepipe
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data

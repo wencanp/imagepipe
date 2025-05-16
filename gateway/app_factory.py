@@ -13,7 +13,8 @@ def create_app():
     if db_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     else:
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../instance/imagepipe.db'
+        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../instance/imagepipe.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:mypassword@postgres:5432/imagepipe'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
     migrate.init_app(app, db)
