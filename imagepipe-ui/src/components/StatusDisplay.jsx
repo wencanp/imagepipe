@@ -1,32 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
 const StatusDisplay = ({ taskId }) => {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     if (!taskId) return;
-    let interval;
+    // clean up previous interval
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
     const checkStatus = async () => {
       try {
-        // check the status
         const res = await axios.get(`/api/status/${taskId}`);
         setStatus(res.data);
         if (res.data.message === 'SUCCESS' || res.data.message === 'FAILED') {
-          clearInterval(interval);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
       } catch (err) {
         setError('Failed to fetch status');
-        clearInterval(interval);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
 
-    interval = setInterval(checkStatus, 2000);
+    intervalRef.current = setInterval(checkStatus, 2000);
     checkStatus();
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
   }, [taskId]);
 
   if (!taskId) return null;
