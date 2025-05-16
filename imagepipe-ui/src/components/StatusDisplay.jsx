@@ -3,38 +3,44 @@ import axios from 'axios';
 
 const StatusDisplay = ({ taskId }) => {
   const [status, setStatus] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!taskId) return;
+    let interval;
 
-    const interval = setInterval(async () => {
+    const checkStatus = async () => {
       try {
-        // const res = await axios.get(`http://localhost:5000/status/${taskId}`);
+        // check the status
         const res = await axios.get(`/api/status/${taskId}`);
         setStatus(res.data);
-        if (res.data.state === 'SUCCESS' || res.data.state === 'FAILURE') {
+        if (res.data.message === 'SUCCESS' || res.data.message === 'FAILED') {
           clearInterval(interval);
         }
       } catch (err) {
-        console.error('Failed to check status', err);
+        setError('Failed to fetch status');
+        clearInterval(interval);
       }
-    }, 2000);
+    };
+
+    interval = setInterval(checkStatus, 2000);
+    checkStatus();
 
     return () => clearInterval(interval);
   }, [taskId]);
 
   if (!taskId) return null;
-  if (!status) return <p>Checking...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (!status) return <p>Pending...</p>;
 
   return (
     <div className="mt-4">
-      <p>Status: {status.state}</p>
-      {status.result && (
-        <a href={status.result.url || status.result} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+      <p>Status: {status.message}</p>
+      {status.url && (
+        <a href={status.url} download target="_blank" rel="noreferrer" className="text-blue-600 underline">
           Download the result
         </a>
       )}
-      {status.error && <p className="text-red-500">{status.error}</p>}
     </div>
   );
 };

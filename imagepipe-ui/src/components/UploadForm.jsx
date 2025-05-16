@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const UploadForm = ({ onTaskSubmitted }) => {
   const [file, setFile] = useState(null);
-  const [processType, setProcessType] = useState('compress');
+  const [processType, setProcessType] = useState('convert');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +28,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
     <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white rounded shadow-md">
       <input type="file" onChange={(e) => setFile(e.target.files[0])} className="block w-full" />
       <select value={processType} onChange={(e) => setProcessType(e.target.value)} className="block w-full p-2 border rounded">
-        <option value="compress">Compress</option>
+        <option value="convert">Convert</option>
         <option value="filter">Filter</option>
         <option value="ocr">OCR</option>
       </select>
