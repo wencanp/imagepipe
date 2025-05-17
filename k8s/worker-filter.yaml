@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-filter-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-filter
+  template:
+    metadata:
+      labels:
+        app: worker-filter
+    spec:
+      containers:
+      - name: worker-filter
+        image: imagepipe-worker-filter
+        command: ["celery"]
+        args: ["-A", "services.filter.filter_worker", "worker", "-n", "filter@%h", "-Q", "filter_queue", "--loglevel=info", "--pool=solo"]
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+        resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+      - name: uploads
+        hostPath:
+          path: /app/uploads
+          type: Directory

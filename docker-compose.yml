@@ -19,11 +19,11 @@ services:
       - ./uploads:/app/uploads
       - ./instance:/app/instance
 
-  worker-compress:
+  worker-convert:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: worker-compress
+    container_name: worker-coonvert
     command: celery -A services.convert.convert_worker worker -n convert@%h -Q convert_queue --loglevel=info --pool=solo
     depends_on:
       - redis
@@ -110,7 +110,6 @@ services:
   postgres:
     image: postgres:15
     container_name: imagepipe-postgres
-    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mypassword

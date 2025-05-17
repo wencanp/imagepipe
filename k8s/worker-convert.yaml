@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-convert-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-convert
+  template:
+    metadata:
+      labels:
+        app: worker-convert
+    spec:
+      containers:
+      - name: worker-convert
+        image: imagepipe-worker-convert
+        command: ["celery"]
+        args: ["-A", "services.convert.convert_worker", "worker", "-n", "convert@%h", "-Q", "convert_queue", "--loglevel=info", "--pool=solo"]
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+        resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+      volumes:
+      - name: uploads
+        hostPath:
+          path: /app/uploads
+          type: Directory
