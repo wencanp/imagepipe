@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleaner-cronjob
+spec:
+  schedule: "0 */12 * * *"  
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cleaner
+              image: imagepipe-cleaner
+              command: ["python", "services/cleaner/cleaner_worker.py"]
+          restartPolicy: OnFailure
