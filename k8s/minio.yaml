@@ -21,9 +21,15 @@ spec:
             - "--console-address=:9001"
           env:
             - name: MINIO_ROOT_USER
-              value: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: imagepipe-secret
+                  key: MINIO_ROOT_USER
             - name: MINIO_ROOT_PASSWORD
-              value: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: imagepipe-secret
+                  key: MINIO_ROOT_PASSWORD
           ports:
             - containerPort: 9000
             - containerPort: 9001
@@ -50,9 +56,11 @@ spec:
   ports:
     - port: 9000
       targetPort: 9000
+      nodePort: 31001
       name: api
     - port: 9001
       targetPort: 9001
+      nodePort: 31002
       name: console
   selector:
     app: minio

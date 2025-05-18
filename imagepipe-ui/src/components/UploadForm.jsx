@@ -25,7 +25,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
     // ocr has no additional parameters
 
     try {
-      const res = await axios.post("/api/upload", formData);
+      const res = await axios.post(`/api/upload`, formData);
       onTaskSubmitted(res.data.task_id);
     } catch (err) {
       console.error(err);

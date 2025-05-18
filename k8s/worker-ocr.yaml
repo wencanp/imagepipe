@@ -18,6 +18,47 @@ spec:
         imagePullPolicy: Never
         command: ["celery"]
         args: ["-A", "services.ocr.ocr_worker", "worker", "-n", "ocr@%h", "-Q", "ocr_queue", "--loglevel=info", "--pool=solo"]
+        env:
+          - name: MINIO_ROOT_USER
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: MINIO_ROOT_USER
+          - name: MINIO_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: MINIO_ROOT_PASSWORD
+          - name: S3_ENDPOINT_URL
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: S3_ENDPOINT_URL
+          - name: MINIO_PUBLIC_HOST
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: MINIO_PUBLIC_HOST
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: POSTGRES_DB
+          - name: REACT_APP_API_URL
+            valueFrom:
+              secretKeyRef:
+                name: imagepipe-secret
+                key: REACT_APP_API_URL
         volumeMounts:
         - name: uploads
           mountPath: /app/uploads
