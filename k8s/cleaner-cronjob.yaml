@@ -11,5 +11,6 @@ spec:
           containers:
             - name: cleaner
               image: imagepipe-cleaner
+              imagePullPolicy: Never
               command: ["python", "services/cleaner/cleaner_worker.py"]
           restartPolicy: OnFailure
