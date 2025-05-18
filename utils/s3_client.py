@@ -4,9 +4,9 @@ from urllib.parse import urlparse, urlunparse
 
 s3 = boto3.client(
     's3',
-    endpoint_url='http://minio:9000',
-    aws_access_key_id='minioadmin',
-    aws_secret_access_key='minioadmin'
+    endpoint_url=os.environ.get('S3_ENDPOINT_URL'),
+    aws_access_key_id=os.environ.get('MINIO_ROOT_USER'),
+    aws_secret_access_key=os.environ.get('MINIO_ROOT_PASSWORD')
 )
 
 BUCKET_NAME = 'imagepipe'

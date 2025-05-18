@@ -15,6 +15,7 @@ spec:
       containers:
       - name: worker-filter
         image: imagepipe-worker-filter
+        imagePullPolicy: Never
         command: ["celery"]
         args: ["-A", "services.filter.filter_worker", "worker", "-n", "filter@%h", "-Q", "filter_queue", "--loglevel=info", "--pool=solo"]
         volumeMounts:
@@ -31,4 +32,4 @@ spec:
       - name: uploads
         hostPath:
           path: /app/uploads
-          type: Directory
+          type: DirectoryOrCreate

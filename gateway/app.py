@@ -34,16 +34,8 @@ from cleaner_worker import clean_expired_files
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route('/upload', methods=['POST', 'OPTIONS'])
+@app.route('/upload', methods=['POST'])
 def upload_file():
-    if request.method == 'OPTIONS':
-        # 处理预检请求
-        response = jsonify({'message': 'CORS preflight'})
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        return response, 200
-    
     logger.info(f"[UPLOAD] Received upload request from {request.remote_addr}, Type: {request.content_type}")
 
     if 'file' not in request.files:
@@ -152,6 +144,7 @@ def upload_file():
 
 @app.route('/download/<filename>', methods=['GET'])
 def download_file(filename):
+    logger.info(f"[DOWNLOAD_FILENAME] Download request for file '{filename}' from {request.remote_addr}")
     file_path = os.path.join(UPLOAD_FOLDER, filename)
 
     if not os.path.exists(file_path):
@@ -167,6 +160,7 @@ def download_file(filename):
 
 @app.route('/download/task/<task_id>', methods=['GET'])
 def download_by_task_id(task_id):
+    logger.info(f"[DOWNLOAD] Download request for task ID: {task_id} from {request.remote_addr}")
     record = TaskRecord.query.get(task_id)
     if not record:
         logger.warning(f"[DOWNLOAD] TaskRecord '{task_id}' not found for download from {request.remote_addr}")

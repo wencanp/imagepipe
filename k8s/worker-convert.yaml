@@ -15,6 +15,7 @@ spec:
       containers:
       - name: worker-convert
         image: imagepipe-worker-convert
+        imagePullPolicy: Never
         command: ["celery"]
         args: ["-A", "services.convert.convert_worker", "worker", "-n", "convert@%h", "-Q", "convert_queue", "--loglevel=info", "--pool=solo"]
         volumeMounts:
@@ -31,4 +32,4 @@ spec:
       - name: uploads
         hostPath:
           path: /app/uploads
-          type: Directory
+          type: DirectoryOrCreate

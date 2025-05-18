@@ -8,3 +8,5 @@ data/
 minio_data/
 instance/
 postgres_data/
+.env
+*.env

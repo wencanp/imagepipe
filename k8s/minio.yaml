@@ -21,9 +21,9 @@ spec:
             - "--console-address=:9001"
           env:
             - name: MINIO_ROOT_USER
-              value: minioadmin
+              value: MINIO_ROOT_USER
             - name: MINIO_ROOT_PASSWORD
-              value: minioadmin
+              value: MINIO_ROOT_PASSWORD
           ports:
             - containerPort: 9000
             - containerPort: 9001
