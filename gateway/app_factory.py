@@ -3,7 +3,9 @@ from flask_cors import CORS
 from database.models import db
 from flask_migrate import Migrate
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 migrate = Migrate()
 
 def create_app():
@@ -16,6 +18,8 @@ def create_app():
     ]
     CORS(app, origins=allowed_origins, supports_credentials=True)
 
+    # Managed database Supabase
+    # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
     # database config compatible local dev adaptation
     db_uri = os.environ.get("IMAGEPIPE_DB_URI")
     if db_uri:
