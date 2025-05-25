@@ -19,7 +19,7 @@ def create_app():
     # Managed database Supabase
     # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
     # database config compatible local dev adaptation
-    db_uri = os.environ.get("IMAGEPIPE_DB_URI")
+    db_uri = os.environ.get("DATABASE_URL")
     if db_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     else:
