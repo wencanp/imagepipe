@@ -31,11 +31,11 @@ def upload_file_to_s3(file_path, s3_key):
         logging.info(f"[3S UPLOAD SUCCESS] {file_path} → {s3_key}, presigned_url: {url}")
 
         # Modify the URL to use the custom domain
-        parsed_url = urlparse(url)
-        new_netloc = PUBLIC_HOST
-        url = urlunparse(parsed_url._replace(netloc=new_netloc))
+        # parsed_url = urlparse(url)
+        # new_netloc = PUBLIC_HOST
+        # url = urlunparse(parsed_url._replace(netloc=new_netloc))
 
-        return url
+        return f"/api/download/{s3_key}" # directly through router
     
     except NoCredentialsError as e:
         logging.error(f"[3S UPLOAD FAILED] {file_path} → {s3_key} | Error: {str(e)}")
