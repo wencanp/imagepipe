@@ -13,7 +13,7 @@ app = Celery('convert', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_
 
 flask_app = create_app()
 
-@app.task(name="convert_worker.convert_image")
+@app.task(name="convert_worker.convert_image", queue='convert_queue')
 def convert_image(input_path, output_path, convert_type, quality=60):
     """
     Compress and convert an image to reduce its file size and  change outcome format.

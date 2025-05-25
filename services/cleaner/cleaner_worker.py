@@ -14,7 +14,7 @@ app = Celery('cleaner', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_
 
 EXPIRATION_HOURS = 12
 
-@app.task(name="cleaner_worker.clean_expired_files")
+@app.task(name="cleaner_worker.clean_expired_files", queue='cleaner_queue')
 def clean_expired_files():
     remove_files = []
     db_removed = []

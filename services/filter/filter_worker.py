@@ -13,7 +13,7 @@ app = Celery('filter', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_U
 
 flask_app = create_app()
 
-@app.task(name="filter_worker.apply_filter")
+@app.task(name="filter_worker.apply_filter", queue='filter_queue')
 def apply_filter(input_path, output_path, filter_type='BLUR'):
     """
     Apply a filter to an image and save the result.

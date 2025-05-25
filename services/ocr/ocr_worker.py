@@ -16,7 +16,7 @@ app = Celery('ocr', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"
 
 flask_app = create_app()
 
-@app.task(name="ocr_worker.extract_text")
+@app.task(name="ocr_worker.extract_text", queue='ocr_queue')
 def extract_text(input_path, output_path):
     """
     Extract text from an image using Tesseract OCR.
