@@ -8,7 +8,7 @@ services:
   gateway:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./gateway/Dockerfile
     container_name: imagepipe-gateway
     ports:
       - "5000:5000"
@@ -18,11 +18,21 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./instance:/app/instance
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - FLASK_APP=${FLASK_APP}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_HOST=${MINIO_PUBLIC_HOST}
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
 
   worker-convert:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./services/convert/Dockerfile
     container_name: worker-coonvert
     command: celery -A services.convert.convert_worker worker -n convert@%h -Q convert_queue --loglevel=info --pool=solo
     depends_on:
@@ -30,11 +40,21 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./instance:/app/instance
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - FLASK_APP=${FLASK_APP}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_HOST=${MINIO_PUBLIC_HOST}
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
 
   worker-filter:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./services/filter/Dockerfile
     container_name: worker-filter
     command: celery -A services.filter.filter_worker worker -n filter@%h -Q filter_queue --loglevel=info --pool=solo
     depends_on:
@@ -42,11 +62,21 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./instance:/app/instance
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - FLASK_APP=${FLASK_APP}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_HOST=${MINIO_PUBLIC_HOST}
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
 
   worker-ocr:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./services/ocr/Dockerfile
     container_name: worker-ocr
     command: celery -A services.ocr.ocr_worker worker -n ocr@%h -Q ocr_queue --loglevel=info --pool=solo
     depends_on:
@@ -54,11 +84,21 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./instance:/app/instance
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - FLASK_APP=${FLASK_APP}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_HOST=${MINIO_PUBLIC_HOST}
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
   
   worker-cleaner:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./services/cleaner/Dockerfile
     container_name: worker-cleaner
     command: celery -A services.cleaner.cleaner_worker worker -B -n cleaner@%h -Q cleaner_queue --loglevel=info --pool=solo
     depends_on:
@@ -67,6 +107,16 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./instance:/app/instance
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - FLASK_APP=${FLASK_APP}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_HOST=${MINIO_PUBLIC_HOST}
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
 
   minio:
     image: minio/minio
@@ -74,9 +124,11 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+    env_file:
+      - .env
     environment:
-      MINIO_ROOT_USER: MINIO_ROOT_USER
-      MINIO_ROOT_PASSWORD: MINIO_ROOT_PASSWORD
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - ./minio_data:/data
     command: server /data --console-address ":9001"
@@ -110,10 +162,12 @@ services:
   postgres:
     image: postgres:15
     container_name: imagepipe-postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: POSTGRES_USER
-      POSTGRES_PASSWORD: POSTGRES_PASSWORD
-      POSTGRES_DB: POSTGRES_DB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
