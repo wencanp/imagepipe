@@ -1,13 +1,15 @@
 # app.py: This is the main entry point for the Flask application.
 
-from flask import request, jsonify, send_from_directory
+from flask import request, jsonify, send_from_directory, send_file
 from database.models import db, TaskRecord
 from celery.result import AsyncResult
 from celery import Celery
-import os, sys, time
+import os, sys, time, io, requests
 from gateway.app_factory import create_app
 import uuid
 import logging 
+from urllib.parse import urlparse, parse_qs
+from gateway.support import is_minio_url_expired
 
 app = create_app()
 
@@ -169,16 +171,40 @@ def download_by_task_id(task_id):
             'message': '[FAILURE] TaskRecord not found'
         }), 404
     
-    file_path = os.path.join(UPLOAD_FOLDER, record.filename)
-    if not os.path.exists(file_path):
-        logger.warning(f"[DOWNLOAD] File '{record.filename}' not found for download from {request.remote_addr}")
+    if not record.result_url:
+        logger.warning(f"[DOWNLOAD] No result_url for task ID {task_id}")
         return jsonify({
             'success': False,
-            'message': '[FAILURE] File not found'
+            'message': '[FAILURE] No result file found for this task'
         }), 404
+
+    if is_minio_url_expired(record.result_url):
+        logger.warning(f"[DOWNLOAD] Expired download URL for task ID {task_id}")
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] Download link expired'
+        }), 410
+    
+    try:
+        response = requests.get(
+            record.result_url,
+            stream=True,
+            headers={'User-Agent': 'ImagePipe'}
+        )
+        response.raise_for_status()
+    except Exception as e:
+        logger.error(f"[DOWNLOAD] Error fetching file from MinIO: {e}")
+        return jsonify({
+            'success': False,
+            'message': '[FAILURE] Error retrieving file'
+        }), 500
     
     logger.info(f"[DOWNLOAD] File '{record.filename}' downloaded successful for {request.remote_addr}")
-    return send_from_directory(UPLOAD_FOLDER, record.filename, as_attachment=True)
+    return send_file(
+        io.BytesIO(response.content),
+        as_attachment=True,
+        download_name=record.filename or 'downloaded_file'
+    )
 
 
 @app.route('/status/<task_id>', methods=['GET'])
