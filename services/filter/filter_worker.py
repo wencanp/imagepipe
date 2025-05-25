@@ -9,9 +9,9 @@ from gateway.app_factory import create_app
 start_time = time.time()
 logger = get_task_logger(__name__)
 
-flask_app = create_app()
-
 app = Celery('filter', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+
+flask_app = create_app()
 
 @app.task(name="filter_worker.apply_filter")
 def apply_filter(input_path, output_path, filter_type='BLUR'):
