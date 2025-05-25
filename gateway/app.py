@@ -13,7 +13,7 @@ from gateway.support import is_minio_url_expired
 
 app = create_app()
 
-celery_app = Celery('gateway', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+celery_app = Celery('gateway', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
 # Configure logging
 logging.basicConfig(

@@ -9,7 +9,7 @@ from gateway.app_factory import create_app
 start_time = time.time()
 logger = get_task_logger(__name__)
 
-app = Celery('filter', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+app = Celery('filter', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
 flask_app = create_app()
 

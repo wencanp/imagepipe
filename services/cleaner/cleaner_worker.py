@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 start_time = time.time()
 logger = get_task_logger(__name__)
 
-app = Celery('cleaner', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+app = Celery('cleaner', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
 EXPIRATION_HOURS = 12
 

@@ -12,7 +12,7 @@ logger = get_task_logger(__name__)
 
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'  
 
-app = Celery('ocr', broker='redis://redis:6379/0', backend="redis://redis:6379/0")
+app = Celery('ocr', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
 flask_app = create_app()
 
