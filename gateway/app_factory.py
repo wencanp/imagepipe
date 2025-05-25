@@ -3,9 +3,7 @@ from flask_cors import CORS
 from database.models import db
 from flask_migrate import Migrate
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
 migrate = Migrate()
 
 def create_app():
