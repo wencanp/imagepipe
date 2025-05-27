@@ -12,6 +12,7 @@ from urllib.parse import urlparse, parse_qs
 from gateway.support import is_minio_url_expired
 
 app = create_app()
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 
 celery_app = Celery('gateway', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
@@ -36,9 +37,11 @@ from cleaner_worker import clean_expired_files
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route("/")
-def home():
-    return "Gateway is running ✅"
+@app.before_request
+def log_request_info():
+    print(f"🛰  Incoming request: {request.method} {request.path}")
+    print(f"🧾 Content-Type: {request.content_type}")
+    print(f"🔧 Headers: {dict(request.headers)}")
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -245,6 +248,4 @@ def trigger_cleanup():
 
 
 if __name__ == "__main__":
-    print("🚀 app.py is running directly, not via Flask CLI")
-    print(f"🧠 __name__ = {__name__}")
     app.run(host="0.0.0.0", port=5000, debug=True)
