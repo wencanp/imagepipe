@@ -25,7 +25,14 @@ const UploadForm = ({ onTaskSubmitted }) => {
     // ocr has no additional parameters
 
     try {
-      const res = await axios.post(`/api/upload`, formData);
+      const res = await axios.post(`/api/upload`, formData, {
+      transitional: {
+        clarifyTimeoutError: true
+      },
+      validateStatus: function (status) {
+        return status < 500; 
+      }
+    });
       onTaskSubmitted(res.data.task_id);
     } catch (err) {
       console.error(err);
