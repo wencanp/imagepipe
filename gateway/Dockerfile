@@ -9,5 +9,5 @@ RUN apt-get update && apt-get install -y tesseract-ocr && rm -rf /var/lib/apt/li
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Shell script to start the Flask app, avoid Railway's Flask CLI inference mechanism
-RUN chmod +x start.sh
-CMD ["./start.sh"]
+RUN chmod +x gateway/start.sh
+CMD ["gateway/start.sh"]

@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "✅ STARTING Gateway via shell CMD..."
-python app.py
+python gateway/app.py
