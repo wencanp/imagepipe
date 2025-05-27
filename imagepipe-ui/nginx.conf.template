@@ -24,9 +24,11 @@ http {
     location /api {
       proxy_pass ${GATEWAY_URL};
       rewrite ^/api/(.*)$ /$1 break;
-      
+
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
+
+      proxy_ssl_verify off;
       proxy_ssl_server_name on;
 
       # 'header too big'
