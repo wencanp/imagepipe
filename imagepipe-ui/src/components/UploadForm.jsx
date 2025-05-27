@@ -26,12 +26,15 @@ const UploadForm = ({ onTaskSubmitted }) => {
 
     try {
       const res = await axios.post(`/api/upload`, formData, {
-      transitional: {
-        clarifyTimeoutError: true
-      },
-      validateStatus: function (status) {
-        return status < 500; 
-      }
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        transitional: {
+          clarifyTimeoutError: true
+        },
+        validateStatus: function (status) {
+          return status < 500; 
+        }
     });
       onTaskSubmitted(res.data.task_id);
     } catch (err) {
