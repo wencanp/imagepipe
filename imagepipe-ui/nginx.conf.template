@@ -21,7 +21,7 @@ http {
     }
 
     # Forward API requests to the Flask backend
-    location /api {
+    location /api/ {
       proxy_pass ${GATEWAY_URL};
       rewrite ^/api/(.*)$ /$1 break;
 
@@ -30,6 +30,8 @@ http {
 
       proxy_ssl_verify off;
       proxy_ssl_server_name on;
+
+      client_max_body_size 16M;
 
       # 'header too big'
       proxy_buffer_size          128k;
