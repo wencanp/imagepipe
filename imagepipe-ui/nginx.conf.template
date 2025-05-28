@@ -21,8 +21,8 @@ http {
     }
 
     # Forward API requests to the Flask backend
-    location /api {
-      proxy_pass ${GATEWAY_URL};
+    location /api/ {
+      proxy_pass https://gateway-production-371b.up.railway.app/;
 
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
