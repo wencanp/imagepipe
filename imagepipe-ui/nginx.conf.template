@@ -25,6 +25,10 @@ http {
       proxy_pass ${GATEWAY_URL};
       rewrite ^/api/(.*)$ /$1 break;
 
+      limit_except GET POST {
+        deny all;
+      }
+
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
 
