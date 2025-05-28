@@ -31,7 +31,7 @@ http {
         return 204;
       }
 
-      proxy_pass https://gateway-production-371b.up.railway.app/;
+      proxy_pass ${GATEWAY_URL};
       
       add_header 'Access-Control-Allow-Origin' '*' always;
       add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
