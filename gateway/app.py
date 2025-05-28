@@ -96,7 +96,7 @@ def upload_file():
             args=[s3_key, f"filter/{processed_filename}", filter_type], queue="filter_queue", task_id=task_id
         )
         TaskRecord.create_record(
-            id=task_id,
+            task_id=task_id,
             filename=processed_filename,
             process_type=process_type
         )
