@@ -1,11 +1,14 @@
-from celery import Celery, current_task
-from utils.s3_client import s3, BUCKET_NAME
+import os 
+import time
 from datetime import datetime, timedelta, timezone
+
+from celery import Celery, current_task
 from celery.schedules import crontab
+from celery.utils.log import get_task_logger
+
 from database.models import TaskRecord, db
 from gateway.app_factory import create_app
-import os, time
-from celery.utils.log import get_task_logger
+from utils.s3_client import s3, BUCKET_NAME
 
 start_time = time.time()
 logger = get_task_logger(__name__)

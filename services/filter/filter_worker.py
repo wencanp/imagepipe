@@ -1,10 +1,13 @@
+import os 
+import time
+
 from celery import Celery, current_task
-from PIL import Image, ImageFilter, UnidentifiedImageError
-from utils.s3_client import upload_file_to_s3, download_file_from_s3
-from database.models import TaskRecord, db
-import os, time
 from celery.utils.log import get_task_logger
+from PIL import Image, ImageFilter, UnidentifiedImageError
+
+from database.models import TaskRecord, db
 from gateway.app_factory import create_app
+from utils.s3_client import upload_file_to_s3, download_file_from_s3
 
 start_time = time.time()
 logger = get_task_logger(__name__)
