@@ -18,8 +18,6 @@ flask_app = create_app()
 
 @app.task(name="convert_worker.convert_image", queue='convert_queue')
 def convert_image(input_path, output_path, convert_type, quality=60):
-    print(f"[DEBUG][CELERY WORKER] DB URI = {flask_app.config['SQLALCHEMY_DATABASE_URI']}")
-
     try: 
         # Check if the input file exists
         try:

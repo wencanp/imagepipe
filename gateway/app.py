@@ -23,8 +23,6 @@ from utils.s3_client import upload_file_to_s3
 
 app = create_app()
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
-print(f"[DEBUG][GATEWAY] DB URI = {app.config['SQLALCHEMY_DATABASE_URI']}")
-
 
 celery_app = Celery('gateway', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
@@ -81,7 +79,7 @@ def upload_file():
         task = extract_text.apply_async(
             args=[s3_key, f"ocr/{processed_filename}"], queue="ocr_queue", task_id=task_id)
         TaskRecord.create_record(
-            id=task_id,
+            task_id=task_id,
             filename=processed_filename,
             process_type=process_type
         )
@@ -122,7 +120,7 @@ def upload_file():
             args=[s3_key, f"convert/{processed_filename}", convert_type, quality], queue="convert_queue", task_id=task_id
         )
         TaskRecord.create_record(
-            id=task_id,
+            task_id=task_id,
             filename=processed_filename,
             process_type=process_type
         )
