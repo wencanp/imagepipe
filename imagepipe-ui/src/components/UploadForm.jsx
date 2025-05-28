@@ -7,7 +7,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
   const [convertType, setConvertType] = useState('.png');
   const [quality, setQuality] = useState(60);
   const [filterType, setFilterType] = useState('BLUR');
-  const API_BASE = process.env.RAILWAY_PRIVATE_DOMAIN;
+  const API_BASE = process.env.REACT_APP_API_BASE;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
