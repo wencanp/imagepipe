@@ -33,12 +33,6 @@ def clean_expired_files():
                     # Delete the file from S3/minio
                     s3.delete_object(Bucket=BUCKET_NAME, Key=key)
 
-                    # delete the local copy if it exists
-                    local_path = os.path.join('/app/uploads', os.path.basename(key))
-                    if os.path.exists(local_path):
-                        os.remove(local_path)
-                    remove_files.append(key)
-
                     # Delete TaskRecord in the database
                     with flask_app.app_context():
                         from database.models import TaskRecord, db
