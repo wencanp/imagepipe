@@ -4,7 +4,7 @@ gateway/app.py
 This is the main entry point for the Flask application.
 Handles API routes, request/response logic, and integration with other services.
 """
-# Python standard libraries
+
 import logging
 import os
 import sys

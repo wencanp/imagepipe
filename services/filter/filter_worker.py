@@ -76,4 +76,4 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
                 status='FAILURE', 
                 error_message=str(e)
             )
-        return {f"Filter failed: {str(e)}"}
+        return f"Filter failed: {str(e)}"
