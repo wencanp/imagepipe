@@ -5,19 +5,16 @@ This is the main entry point for the Flask application.
 Handles API routes, request/response logic, and integration with other services.
 """
 # Python standard libraries
-import io
 import logging
 import os
 import sys
 import uuid
 # Third-party libraries
 from celery import Celery
-from flask import request, jsonify, send_file
-import requests
+from flask import request, jsonify
 # Local application imports
 from database.models import db, TaskRecord
 from gateway.app_factory import create_app
-from gateway.support import is_minio_url_expired
 from utils.cleaner_code import _json_fail
 from utils.s3_client import upload_file_to_s3
 
@@ -156,10 +153,6 @@ def download_by_task_id(task_id):
     if not record.result_url:
         logger.warning(f"[DOWNLOAD] No result_url for task ID {task_id}")
         return _json_fail('[FAILURE] No result file found for this task', 404)
-
-    if is_minio_url_expired(record.result_url):
-        logger.warning(f"[DOWNLOAD] Expired download URL for task ID {task_id}")
-        return _json_fail('[FAILURE] Download link expired', 410)
     
     logger.info(f"[DOWNLOAD] Returning presigned URL for task ID: {task_id}")
     return jsonify({
