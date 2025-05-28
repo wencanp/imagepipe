@@ -44,9 +44,7 @@ def extract_text(input_path, output_path):
 
         logger.info(f"OCR success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
-            "message": "OCR completed and uploaded",
-            "url": url
-        }
+            "message": "OCR completed and uploaded"}
     except Exception as e:
         logger.error(f"OCR failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None

@@ -63,10 +63,7 @@ def convert_image(input_path, output_path, convert_type, quality=60):
             )
 
         logger.info(f"Conversion success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
-        return {
-            "message": "Converted and uploaded",
-            "url": url
-        }
+        return {"message": "Converted and uploaded"}
     except Exception as e:
         logger.error(f"Conversion failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         with flask_app.app_context():

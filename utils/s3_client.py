@@ -29,7 +29,7 @@ def upload_file_to_s3(file_path, s3_key):
             ExpiresIn=3600
         )  # URL valid for 1 hour
 
-        logging.info(f"[3S UPLOAD SUCCESS] {file_path} → {s3_key} | presigned_url: {url}")
+        logging.info(f"[3S UPLOAD SUCCESS] {file_path} → {s3_key}.")
         
         return url
     

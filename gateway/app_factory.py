@@ -14,7 +14,7 @@ def create_app():
         "http://localhost:3000",
         "http://127.0.0.1:3000"
     ]
-    CORS(app, origins=allowed_origins, supports_credentials=True)
+    CORS(app, origins=allowed_origins, methods=["GET", "POST"], supports_credentials=True)
 
     # Managed database Supabase
     # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']

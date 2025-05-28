@@ -71,9 +71,7 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
 
         logger.info(f"Filter success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
-            "message": f"'{filter_type}' applied and image uploaded",
-            "url": url
-        }
+            "message": f"'{filter_type}' applied and image uploaded"}
     except Exception as e:
         logger.error(f"Filter failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None
