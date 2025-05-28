@@ -1,6 +1,6 @@
 from celery import Celery, current_task
 from PIL import Image, UnidentifiedImageError
-from utils.s3_client import upload_file_to_s3
+from utils.s3_client import upload_file_to_s3, download_file_from_s3
 from database.models import TaskRecord, db
 from gateway.app_factory import create_app
 import os, time
@@ -15,18 +15,11 @@ flask_app = create_app()
 
 @app.task(name="convert_worker.convert_image", queue='convert_queue')
 def convert_image(input_path, output_path, convert_type, quality=60):
-    """
-    Compress and convert an image to reduce its file size and  change outcome format.
-    
-    :param input_path: Path to the input image file.
-    :param output_path: Path where the compressed image will be saved.
-    os.path.splitext(file.filename)[0]
-    :param quality: Quality of the compressed image (1-100).
-    """
     try: 
         # Check if the input file exists
         try:
-            img = Image.open(input_path)
+            input_stream = download_file_from_s3(input_path)
+            img = Image.open(input_stream)
         except UnidentifiedImageError:
             logger.error(f"Unsupported image format or corrupted file. Task ID: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
             return {
@@ -46,15 +39,17 @@ def convert_image(input_path, output_path, convert_type, quality=60):
 
         # Convert, compress, and save the image
         img = img.convert("RGBA") if convert_type == ".png" else img.convert("RGB")
+        local_tmp_path = f"/tmp/{output_path}"
         img.save(
-            output_path, 
+            local_tmp_path, 
             format=convert_type.strip('.').upper(), 
             optimize=True, 
             quality=quality
         )
 
         # Upload the converted file to S3
-        url = upload_file_to_s3(output_path, f"convert/{os.path.basename(output_path)}")
+        url = upload_file_to_s3(local_tmp_path, output_path)
+        os.remove(local_tmp_path) 
 
         with flask_app.app_context():
             task_id = current_task.request.id

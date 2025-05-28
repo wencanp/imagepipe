@@ -147,20 +147,20 @@ def upload_file():
     }), 400
 
 
-@app.route('/download/<filename>', methods=['GET'])
-def download_file(filename):
-    logger.info(f"[DOWNLOAD_FILENAME] Download request for file '{filename}' from {request.remote_addr}")
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
+# @app.route('/download/<filename>', methods=['GET'])
+# def download_file(filename):
+#     logger.info(f"[DOWNLOAD_FILENAME] Download request for file '{filename}' from {request.remote_addr}")
+#     file_path = os.path.join(UPLOAD_FOLDER, filename)
 
-    if not os.path.exists(file_path):
-        logger.warning(f"[DOWNLOAD_FILENAME] File '{filename}' not found for download from {request.remote_addr}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] File not found'
-        }), 404
+#     if not os.path.exists(file_path):
+#         logger.warning(f"[DOWNLOAD_FILENAME] File '{filename}' not found for download from {request.remote_addr}")
+#         return jsonify({
+#             'success': False,
+#             'message': '[FAILURE] File not found'
+#         }), 404
 
-    logger.info(f"[DOWNLOAD_FILENAME] File '{filename}' downloaded successful for {request.remote_addr}")
-    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
+#     logger.info(f"[DOWNLOAD_FILENAME] File '{filename}' downloaded successful for {request.remote_addr}")
+#     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 
 @app.route('/download/task/<task_id>', methods=['GET'])
@@ -227,8 +227,7 @@ def check_task_status(task_id):
     return jsonify({
         'success': True,
         'message': f'{status}',
-        'task_id': task_id,
-        'url': record.result_url if status == 'SUCCESS' else None
+        'task_id': task_id
     }), 200
 
 

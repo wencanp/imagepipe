@@ -1,6 +1,7 @@
 import boto3, os, logging
 from botocore.exceptions import NoCredentialsError
 from urllib.parse import urlparse, urlunparse
+import io
 
 BUCKET_NAME = 'imagepipe'
 PUBLIC_HOST = os.environ.get('MINIO_PUBLIC_HOST', 'localhost:9000')
@@ -28,15 +29,25 @@ def upload_file_to_s3(file_path, s3_key):
             ExpiresIn=3600
         )  # URL valid for 1 hour
 
-        logging.info(f"[3S UPLOAD SUCCESS] {file_path} → {s3_key}, presigned_url: {url}")
-
-        # Modify the URL to use the custom domain
-        # parsed_url = urlparse(url)
-        # new_netloc = PUBLIC_HOST
-        # url = urlunparse(parsed_url._replace(netloc=new_netloc))
-
-        return f"/api/download/{s3_key}" # directly through router
+        logging.info(f"[3S UPLOAD SUCCESS] {file_path} → {s3_key} | presigned_url: {url}")
+        
+        return url
     
     except NoCredentialsError as e:
         logging.error(f"[3S UPLOAD FAILED] {file_path} → {s3_key} | Error: {str(e)}")
         return None
+
+
+def download_file_from_s3(key):
+    try:
+        file_stream = io.BytesIO()
+        s3.download_fileobj(BUCKET_NAME, key, file_stream)
+        file_stream.seek(0)  
+        logging.info(f"[S3 DOWNLOAD SUCCESS] Downloading from bucket={BUCKET_NAME}, key={key}")
+        return file_stream
+    except NoCredentialsError as e:
+        logging.error(f"[S3 DOWNLOAD FAILED] Credentials not found: {e}")
+        raise
+    except Exception as e:
+        logging.error(f"[S3 DOWNLOAD FAILED] Failed to download {key}: {e}")
+        raise
