@@ -1,6 +1,7 @@
 # app.py: This is the main entry point for the Flask application.
 
 from flask import request, jsonify, send_from_directory, send_file
+from utils.s3_client import upload_file_to_s3
 from database.models import db, TaskRecord
 from celery.result import AsyncResult
 from celery import Celery
@@ -37,12 +38,6 @@ from cleaner_worker import clean_expired_files
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.before_request
-def log_request_info():
-    print(f"🛰  Incoming request: {request.method} {request.path}")
-    print(f"🧾 Content-Type: {request.content_type}")
-    print(f"🔧 Headers: {dict(request.headers)}")
-
 @app.route('/upload', methods=['POST'])
 def upload_file():
     logger.info(f"[UPLOAD] Received upload request from {request.remote_addr}, Type: {request.content_type}")
@@ -62,18 +57,24 @@ def upload_file():
             'message': '[FAILURE] No selected file'
         }), 400
 
-    save_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(save_path)
+    task_id = str(uuid.uuid4())
+    filename = f"{task_id}_{file.filename}"
+    local_tmp_path = f"/tmp/{filename}"
+    file.save(local_tmp_path)
+    # Upload file to MinIO
+    s3_key = f"uploads/{filename}"
+    upload_file_to_s3(local_tmp_path, s3_key)
+    os.remove(local_tmp_path)
 
     process_type = request.form.get('process_type', 'convert')
 
     if process_type == 'ocr':
-        task_id = str(uuid.uuid4())
         txt_filename = f"{task_id}.txt"
-        txt_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, txt_filename))
 
         # submit the async task to Celery
-        task = extract_text.apply_async(args=[save_path, txt_path], queue="ocr_queue", task_id=task_id)
+        task = extract_text.apply_async(
+            args=[s3_key, f"ocr/{txt_filename}"], 
+            queue="ocr_queue", task_id=task_id)
         task_record = TaskRecord(
             id=task_id,
             filename=txt_filename,
@@ -92,12 +93,11 @@ def upload_file():
 
     elif process_type == 'filter':
         filter_type = request.form.get('filter_type', 'BLUR')
-
-        task_id = str(uuid.uuid4())
         filtered_filename = f"{task_id}{os.path.splitext(file.filename)[-1]}"
-        filtered_path = os.path.join(UPLOAD_FOLDER, filtered_filename)
+
         task = apply_filter.apply_async(
-            args=[save_path, filtered_path, filter_type], queue="filter_queue", task_id=task_id
+            args=[s3_key, f"filter/{filtered_filename}", filter_type], 
+            queue="filter_queue", task_id=task_id
         )
         task_record = TaskRecord(
             id=task_id,
@@ -118,14 +118,11 @@ def upload_file():
     elif process_type == 'convert': 
         convert_type = request.form.get('convert_type', os.path.splitext(file.filename)[-1])
         quality = request.form.get('quality', 60)
-
-        task_id = str(uuid.uuid4())
         converted_filename = f"{task_id}{convert_type}"
-        converted_path = os.path.join(UPLOAD_FOLDER, converted_filename)
-        time.sleep(0.1)  # ensure save image then convert
 
         task = convert_image.apply_async(
-            args=[save_path, converted_path, convert_type, quality], queue="convert_queue", task_id=task_id
+            args=[s3_key, f"convert/{converted_filename}", convert_type, quality], 
+            queue="convert_queue", task_id=task_id
         )
         task_record = TaskRecord(
             id=task_id,
@@ -135,7 +132,6 @@ def upload_file():
         )
         db.session.add(task_record)
         db.session.commit()
-
 
         logger.info(f"[UPLOAD] Conversion task submitted with ID: {task_id} from {request.remote_addr}")
         return jsonify({
