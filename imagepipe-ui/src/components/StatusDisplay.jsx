@@ -48,7 +48,7 @@ const StatusDisplay = ({ taskId }) => {
   return (
     <div className="w-full max-w-sm mx-auto mt-6 p-4 bg-[#eaf5e3] rounded-xl shadow flex flex-col items-center">
       <p className="text-green-800 font-semibold mb-2">Status: {status.message}</p>
-      {downloadUrl === 'SUCCESS' && (
+      {status.message === 'SUCCESS' && downloadUrl && (
         <a href={downloadUrl} download target="_blank" rel="noreferrer" className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow transition-colors mt-2">
           Download the result
         </a>
