@@ -38,3 +38,13 @@ class TaskRecord(db.Model):
             record.error_message = error_message
 
         db.session.commit()
+    
+    @classmethod
+    def delete_by_filename(cls, filename):
+        record = cls.query.filter_by(filename=filename).first()
+        if not record:
+            return False
+        
+        db.session.delete(record)
+        db.session.commit()
+        return True

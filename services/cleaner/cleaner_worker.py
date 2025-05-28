@@ -23,38 +23,35 @@ def clean_expired_files():
     db_removed = []
     flask_app = create_app()
     try:
-        response = s3.list_objects_v2(Bucket=BUCKET_NAME)
+        s3_objs = s3.list_objects_v2(Bucket=BUCKET_NAME).get('Contents', [])
         now = datetime.now(timezone.utc)
+        expired_objs = [
+            obj['Key'] for obj in s3_objs 
+            if now - obj['LastModified'] > timedelta(hours=EXPIRATION_HOURS)
+        ]
 
-        for obj in response.get('Contents', []):
-            key = obj['Key']
-            last_modified = obj['LastModified']
-
-            # Check if the file is older than the expiration time
-            if now - last_modified > timedelta(hours=EXPIRATION_HOURS):
-                try:
-                    # Delete the file from S3/minio
-                    s3.delete_object(Bucket=BUCKET_NAME, Key=key)
-
-                    # Delete TaskRecord in the database
-                    with flask_app.app_context():
-                        from database.models import TaskRecord, db
-                        record = TaskRecord.query.filter_by(filename=os.path.basename(key)).first()
-                        if record:
-                            db.session.delete(record)
-                            db.session.commit()
-                            db_removed.append(record.id)
-                except Exception as e:
-                    logger.error(f"Error deleting file {key}: {e}. task_id: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
-                    continue
-
-        if not remove_files:
-            logger.info("No expired files to clean. task_id: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
-            return {
-                "message": "No expired files to clean"
-            }
+        if not expired_objs:
+            logger.info(f"No expired files found. Start time.")
+            return {"message": "No expired files to clean up"}
         
-        logger.info(f"Cleanup completed. Deleted files: {remove_files}. Deleted DB records: {db_removed}. task_id: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
+        for key in expired_objs:
+            filename = os.path.basename(key)
+            
+            try:
+                # delete s3 files
+                s3.delete_object(Bucket=BUCKET_NAME, Key=key)
+                remove_files.append(key)
+                # delete TaskRecord in the database
+                if TaskRecord.delete_by_filename(filename):
+                    db_removed.append(filename)
+            except Exception as e:
+                logger.error(f"Error deleting file {key}: {e}. ")
+                continue
+
+        logger.info(
+            f"Cleanup completed. "
+            f"Deleted files: {remove_files}, DB records: {db_removed}. "
+            f"Start time [{start_time}] End time [{time.time()}]")
         return {
             "message": "Cleanup completed",
             "deleted_files": remove_files,
