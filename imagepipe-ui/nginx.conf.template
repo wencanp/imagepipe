@@ -30,13 +30,14 @@ http {
 
       proxy_set_header Access-Control-Request-Method $request_method;
       proxy_set_header Access-Control-Request-Headers $http_access_control_request_headers;
+
+      proxy_ssl_verify off;
       proxy_ssl_server_name on;
 
-      add_header 'Access-Control-Allow-Origin' '*' always;
-      add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
-      add_header 'Access-Control-Allow-Headers' '*' always;
-
       if ($request_method = OPTIONS) {
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' '*' always;
         return 204;
       }
 

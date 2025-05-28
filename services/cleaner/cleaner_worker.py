@@ -31,7 +31,7 @@ def clean_expired_files():
         ]
 
         if not expired_objs:
-            logger.info(f"No expired files found. Start time.")
+            logger.info(f"No expired files found.")
             return {"message": "No expired files to clean up"}
         
         for key in expired_objs:

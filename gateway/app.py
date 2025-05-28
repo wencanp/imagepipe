@@ -47,7 +47,7 @@ from cleaner_worker import clean_expired_files
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "../uploads"))
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@app.route('/upload', methods=['POST', 'OPTION'])
+@app.route('/upload', methods=['POST', 'OPTIONS'])
 def upload_file():
     logger.info(f"[UPLOAD] Received upload request from {request.remote_addr}, Type: {request.content_type}")
 
