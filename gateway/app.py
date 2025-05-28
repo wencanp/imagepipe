@@ -172,11 +172,18 @@ def download_by_task_id(task_id):
         logger.error(f"[DOWNLOAD] Error fetching file from MinIO: {e}")
         return _json_fail('[FAILURE] Error retrieving file', 500)
     
-    logger.info(f"[DOWNLOAD] File '{record.filename}' downloaded successful for {request.remote_addr}")
+    # filename extension based on process_type
+    if record.process_type == 'ocr':
+        download_name = f"{record.filename}.txt" if not record.filename.endswith('.txt') else record.filename
+    else:
+        download_name = record.filename
+    
+    logger.info(f"[DOWNLOAD] File '{download_name}' downloaded successful for {request.remote_addr}")
     return send_file(
         io.BytesIO(response.content),
         as_attachment=True,
-        download_name=record.filename or 'downloaded_file'
+        download_name=download_name,
+        mimetype='application/octet-stream'  # use generic binary stream type
     )
 
 

@@ -25,9 +25,7 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
             img = Image.open(input_stream)
         except UnidentifiedImageError:
             logger.error(f"Unsupported image format or corrupted file. Task ID: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
-            return {
-                "error": "Unsupported image format or corrupted file."
-            }
+            return {"error": "Unsupported image format or corrupted file."}
 
         # Check supported filter types
         filter_mapping = {
@@ -38,9 +36,7 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
         }
         if filter_type not in filter_mapping:
             logger.error(f"Unsupported filter type: {filter_type}. Task ID: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
-            return {
-                "error": "Unsupported filter type"
-            }
+            return {"error": "Unsupported filter type"}
         
         # Apply the filter
         original_format = os.path.splitext(input_path)[-1].strip('.').upper()
@@ -74,11 +70,10 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
             "message": f"'{filter_type}' applied and image uploaded"}
     except Exception as e:
         logger.error(f"Filter failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
-        task_record = None
         with flask_app.app_context():
             TaskRecord.update_record(
                 current_task.request.id, 
                 status='FAILURE', 
                 error_message=str(e)
             )
-        return f"Filter failed: {str(e)}"
+        return {f"Filter failed: {str(e)}"}
