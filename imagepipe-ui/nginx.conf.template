@@ -21,19 +21,24 @@ http {
     }
 
     # Forward API requests to the Flask backend
-    location /api/ {
+    location /api {
       proxy_pass ${GATEWAY_URL};
-      rewrite ^/api/(.*)$ /$1 break;
-
-      limit_except GET POST {
-        deny all;
-      }
 
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
-      proxy_ssl_verify off;
+      proxy_set_header Access-Control-Request-Method $request_method;
+      proxy_set_header Access-Control-Request-Headers $http_access_control_request_headers;
       proxy_ssl_server_name on;
+
+      add_header 'Access-Control-Allow-Origin' '*' always;
+      add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+      add_header 'Access-Control-Allow-Headers' '*' always;
+
+      if ($request_method = OPTIONS) {
+        return 204;
+      }
 
       client_max_body_size 16M;
 

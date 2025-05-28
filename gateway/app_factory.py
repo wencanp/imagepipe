@@ -12,9 +12,15 @@ def create_app():
     env_origins = [o.strip() for o in env_origins.split(",") if o.strip()]
     allowed_origins = env_origins + [
         "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "https://*.up.railway.app",
+        "https://*.railway.app"
     ]
-    CORS(app, origins=allowed_origins, methods=["GET", "POST"], supports_credentials=True)
+    CORS(app, 
+         origins=allowed_origins, 
+         methods=["GET", "POST", "PUT", "DELETE", "OPTION"], 
+         allow_headers=["*"]
+         supports_credentials=True)
 
     # Managed database Supabase
     # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
