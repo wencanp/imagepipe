@@ -7,6 +7,9 @@ http {
   default_type  application/octet-stream;
 
   sendfile        on;
+  
+  # Add resolver for DNS resolution
+  resolver 8.8.8.8 ipv6=off;
 
   server {
     listen 80;
@@ -31,10 +34,12 @@ http {
         return 204;
       }
 
-      # Strip /api prefix
-      location ~ ^/api/(.*)$ {
-        proxy_pass ${GATEWAY_URL}/$1$is_args$args;
-      }
+      # Set variable for dynamic proxy_pass
+      set $upstream ${GATEWAY_URL};
+      
+      # Strip /api prefix and proxy
+      rewrite ^/api/(.*) /$1 break;
+      proxy_pass $upstream;
       
       add_header 'Access-Control-Allow-Origin' '*' always;
       add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
