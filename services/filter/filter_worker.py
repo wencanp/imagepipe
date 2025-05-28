@@ -1,6 +1,6 @@
 from celery import Celery, current_task
 from PIL import Image, ImageFilter, UnidentifiedImageError
-from utils.s3_client import upload_file_to_s3
+from utils.s3_client import upload_file_to_s3, download_file_from_s3
 from database.models import TaskRecord, db
 import os, time
 from celery.utils.log import get_task_logger
@@ -15,17 +15,11 @@ flask_app = create_app()
 
 @app.task(name="filter_worker.apply_filter", queue='filter_queue')
 def apply_filter(input_path, output_path, filter_type='BLUR'):
-    """
-    Apply a filter to an image and save the result.
-    
-    :param input_path: Path to the input image file.
-    :param output_path: Path where the filtered image will be saved.
-    :param filter_type: Type of filter to apply (e.g., 'BLUR', 'CONTOUR').
-    """
     try:
         # Check if the input file exists
         try:
-            img = Image.open(input_path)
+            input_stream = download_file_from_s3(input_path)
+            img = Image.open(input_stream)
         except UnidentifiedImageError:
             logger.error(f"Unsupported image format or corrupted file. Task ID: {current_task.request.id}. Start time [{start_time}] End time [{time.time()}]")
             return {
@@ -51,19 +45,18 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
         if original_format == "JPG":
             original_format = "JPEG"
         img = img.convert("RGBA") if original_format == "PNG" else img.convert("RGB")
-        
         img = img.filter(filter_mapping[filter_type])
-
-        # Save image
+        local_tmp_path = f"/tmp/{output_path}"
         img.save(
-            output_path, 
+            local_tmp_path, 
             format=original_format, 
             optimize=True, 
             quality=95
         )
 
         # Upload the filtered file to S3
-        url = upload_file_to_s3(output_path, f"filter/{os.path.basename(output_path)}")
+        url = upload_file_to_s3(local_tmp_path, output_path)
+        os.remove(local_tmp_path) 
 
         with flask_app.app_context():
             task_id = current_task.request.id

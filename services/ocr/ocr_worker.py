@@ -1,7 +1,7 @@
 from celery import Celery, current_task
 from PIL import Image
 import pytesseract
-from utils.s3_client import upload_file_to_s3
+from utils.s3_client import upload_file_to_s3, download_file_from_s3
 from database.models import TaskRecord, db
 import os, time
 from gateway.app_factory import create_app
@@ -18,21 +18,18 @@ flask_app = create_app()
 
 @app.task(name="ocr_worker.extract_text", queue='ocr_queue')
 def extract_text(input_path, output_path):
-    """
-    Extract text from an image using Tesseract OCR.
-    
-    :param input_path: Path to the input image file.
-    :param output_path: Path to save the extracted text file.
-    """
     try:
-        img = Image.open(input_path)
+        input_stream = download_file_from_s3(input_path)
+        img = Image.open(input_stream)
         img = img.convert("RGB")
         text = pytesseract.image_to_string(img)
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        local_tmp_path = f"/tmp/{output_path}"
+        with open(local_tmp_path, "w", encoding="utf-8") as f:
             f.write(text)
 
-        url = upload_file_to_s3(output_path, f"OCR/{os.path.basename(output_path)}")
+        url = upload_file_to_s3(local_tmp_path, output_path)
+        os.remove(local_tmp_path) 
 
         with flask_app.app_context():
             task_id = current_task.request.id
