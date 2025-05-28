@@ -34,12 +34,13 @@ def extract_text(input_path, output_path):
         url = upload_file_to_s3(local_tmp_path, output_path)
         os.remove(local_tmp_path) 
 
-        TaskRecord.update_record(
-            current_task.request.id, 
-            status='SUCCESS', 
-            result_url=url,
-            error_message=None
-        )
+        with flask_app.app_context():
+            TaskRecord.update_record(
+                current_task.request.id, 
+                status='SUCCESS', 
+                result_url=url,
+                error_message=None
+            )
 
         logger.info(f"OCR success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
@@ -49,12 +50,10 @@ def extract_text(input_path, output_path):
     except Exception as e:
         logger.error(f"OCR failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None
-        try:
+        with flask_app.app_context():
             TaskRecord.update_record(
                 current_task.request.id, 
                 status='FAILURE', 
                 error_message=str(e)
             )
-        except Exception:
-            pass
         return f"OCR failed: {str(e)}"

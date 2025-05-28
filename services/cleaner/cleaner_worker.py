@@ -36,14 +36,14 @@ def clean_expired_files():
         
         for key in expired_objs:
             filename = os.path.basename(key)
-            
             try:
                 # delete s3 files
                 s3.delete_object(Bucket=BUCKET_NAME, Key=key)
                 remove_files.append(key)
                 # delete TaskRecord in the database
-                if TaskRecord.delete_by_filename(filename):
-                    db_removed.append(filename)
+                with flask_app.app_context():
+                    if TaskRecord.delete_by_filename(filename):
+                        db_removed.append(filename)
             except Exception as e:
                 logger.error(f"Error deleting file {key}: {e}. ")
                 continue
