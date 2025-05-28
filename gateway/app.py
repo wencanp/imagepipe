@@ -2,6 +2,7 @@
 
 from flask import request, jsonify, send_from_directory, send_file
 from utils.s3_client import upload_file_to_s3
+from utils.cleaner_code import _json_fail
 from database.models import db, TaskRecord
 from celery.result import AsyncResult
 from celery import Celery
@@ -44,18 +45,12 @@ def upload_file():
 
     if 'file' not in request.files:
         logger.warning(f"[UPLOAD] File not found in request from {request.remote_addr}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] File not found'
-        }), 400
+        return _json_fail('[FAILURE] File not found', 400)
     
     file = request.files['file']
     if file.filename == '':
         logger.warning(f"[UPLOAD] No selected file from {request.remote_addr}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] No selected file'
-        }), 400
+        return _json_fail('[FAILURE] No selected file', 400) 
 
     task_id = str(uuid.uuid4())
     filename = f"{task_id}_{file.filename}"
@@ -141,10 +136,7 @@ def upload_file():
         }), 200
 
     logger.warning(f"[UPLOAD] Unknown process type '{process_type}' from {request.remote_addr}")
-    return jsonify({
-        'success': False,
-        'message': '[FAILURE] Unknown process type'
-    }), 400
+    return _json_fail('[FAILURE] Unknown process type', 400)
 
 
 # @app.route('/download/<filename>', methods=['GET'])
@@ -154,10 +146,7 @@ def upload_file():
 
 #     if not os.path.exists(file_path):
 #         logger.warning(f"[DOWNLOAD_FILENAME] File '{filename}' not found for download from {request.remote_addr}")
-#         return jsonify({
-#             'success': False,
-#             'message': '[FAILURE] File not found'
-#         }), 404
+#         return _json_fail('[FAILURE] File not found', 404)
 
 #     logger.info(f"[DOWNLOAD_FILENAME] File '{filename}' downloaded successful for {request.remote_addr}")
 #     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
@@ -169,24 +158,15 @@ def download_by_task_id(task_id):
     record = TaskRecord.query.get(task_id)
     if not record:
         logger.warning(f"[DOWNLOAD] TaskRecord '{task_id}' not found for download from {request.remote_addr}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] TaskRecord not found'
-        }), 404
+        return _json_fail('[FAILURE] TaskRecord not found', 404)
     
     if not record.result_url:
         logger.warning(f"[DOWNLOAD] No result_url for task ID {task_id}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] No result file found for this task'
-        }), 404
+        return _json_fail('[FAILURE] No result file found for this task', 404)
 
     if is_minio_url_expired(record.result_url):
         logger.warning(f"[DOWNLOAD] Expired download URL for task ID {task_id}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] Download link expired'
-        }), 410
+        return _json_fail('[FAILURE] Download link expired', 410)
     
     try:
         response = requests.get(
@@ -197,10 +177,7 @@ def download_by_task_id(task_id):
         response.raise_for_status()
     except Exception as e:
         logger.error(f"[DOWNLOAD] Error fetching file from MinIO: {e}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] Error retrieving file'
-        }), 500
+        return _json_fail('[FAILURE] Error retrieving file', 500)
     
     logger.info(f"[DOWNLOAD] File '{record.filename}' downloaded successful for {request.remote_addr}")
     return send_file(
@@ -216,10 +193,7 @@ def check_task_status(task_id):
     record = TaskRecord.query.get(task_id)
     if not record:
         logger.warning(f"[STATUS] TaskRecord '{task_id}' not found from {request.remote_addr}")
-        return jsonify({
-            'success': False,
-            'message': '[FAILURE] Task not found'
-        }), 404
+        return _json_fail('[FAILURE] Task not found', 404)
     
     status = record.status
 
