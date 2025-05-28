@@ -1,13 +1,6 @@
-import logging
 import time
 
 from urllib.parse import urlparse, parse_qs
-
-logging.basicConfig(
-    level=logging.INFO, 
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('gateway')
 
 def is_minio_url_expired(url):
     """ Check if a MinIO presigned URL has expired."""
@@ -24,7 +17,7 @@ def is_minio_url_expired(url):
         signed_time = datetime.strptime(signed_time_str, "%Y%m%dT%H%M%SZ")
         expiry_time = signed_time + timedelta(seconds=expires_in)
 
-        return time.time() > expiry_time.timestamp()
+        print(f"signed_time: {signed_time}, expiry_time: {expiry_time}")
+        return time.time() < expiry_time.timestamp()
     except Exception as e:
-        logger.error(f"[DOWNLOAD DEBUG] Error checking MinIO URL expiration: {e}")
         return True  # if any error occurs, assume expired
