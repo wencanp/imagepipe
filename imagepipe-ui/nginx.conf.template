@@ -1,7 +1,5 @@
-worker_processes 1;
-
 events {
-  worker_connections 4096;
+  worker_connections 1024;
 }
 
 http {
@@ -12,6 +10,7 @@ http {
 
   server {
     listen 80;
+    server_name imagepipe.up.railway.app;
 
     # React frontend static files
     location / {
@@ -28,11 +27,10 @@ http {
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
-      proxy_set_header Access-Control-Request-Method $request_method;
-      proxy_set_header Access-Control-Request-Headers $http_access_control_request_headers;
-
       proxy_ssl_verify off;
       proxy_ssl_server_name on;
+      
+      client_max_body_size 16M;
 
       if ($request_method = OPTIONS) {
         add_header 'Access-Control-Allow-Origin' '*' always;
@@ -40,13 +38,6 @@ http {
         add_header 'Access-Control-Allow-Headers' '*' always;
         return 204;
       }
-
-      client_max_body_size 16M;
-
-      # 'header too big'
-      proxy_buffer_size          128k;
-      proxy_buffers              4 256k;
-      proxy_busy_buffers_size    256k;
     }
   }
 }
