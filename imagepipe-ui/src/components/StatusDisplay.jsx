@@ -18,7 +18,8 @@ const StatusDisplay = ({ taskId }) => {
         const res = await axios.get(`${API_BASE}/api/status/${taskId}`);
         setStatus(res.data);
         if (res.data.message === 'SUCCESS') {
-          setDownloadUrl(`${API_BASE}/api/download/task/${taskId}`);
+          const downloadRes = await axios.get(`${API_BASE}/api/download/task/${taskId}`);
+          setDownloadUrl(downloadRes.data.url);
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         } else if (res.data.message === 'FAILED') {
@@ -49,7 +50,7 @@ const StatusDisplay = ({ taskId }) => {
     <div className="w-full max-w-sm mx-auto mt-6 p-4 bg-[#eaf5e3] rounded-xl shadow flex flex-col items-center">
       <p className="text-green-800 font-semibold mb-2">Status: {status.message}</p>
       {status.message === 'SUCCESS' && downloadUrl && (
-        <a href={downloadUrl} download target="_blank" rel="noreferrer" className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow transition-colors mt-2">
+        <a href={downloadUrl} className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow transition-colors mt-2">
           Download the result
         </a>
       )}

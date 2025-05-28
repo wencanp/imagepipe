@@ -4,11 +4,12 @@ from urllib.parse import urlparse, urlunparse
 import io
 
 BUCKET_NAME = 'imagepipe'
-PUBLIC_HOST = os.environ.get('MINIO_PUBLIC_HOST', 'localhost:9000')
+INTERNAL_ENDPOINT = os.environ.get('S3_ENDPOINT_URL')  # Railway internal endpoint
+PUBLIC_ENDPOINT = os.environ.get('MINIO_PUBLIC_URL')   # public endpoint
 
 s3 = boto3.client(
     's3',
-    endpoint_url=os.environ.get('S3_ENDPOINT_URL'),
+    endpoint_url=INTERNAL_ENDPOINT,
     aws_access_key_id=os.environ.get('MINIO_ROOT_USER'),
     aws_secret_access_key=os.environ.get('MINIO_ROOT_PASSWORD')
 )
@@ -23,18 +24,25 @@ def upload_file_to_s3(file_path, s3_key):
         s3.upload_file(file_path, BUCKET_NAME, s3_key)
 
         # generate a presigned URL for the uploaded file
-        url = s3.generate_presigned_url(
+        public_s3 = boto3.client(
+            's3',
+            endpoint_url=PUBLIC_ENDPOINT,
+            aws_access_key_id=os.environ.get('MINIO_ROOT_USER'),
+            aws_secret_access_key=os.environ.get('MINIO_ROOT_PASSWORD')
+        )
+        
+        url = public_s3.generate_presigned_url(
             ClientMethod='get_object',
             Params={'Bucket': BUCKET_NAME, 'Key': s3_key},
             ExpiresIn=3600
         )  # URL valid for 1 hour
 
-        logging.info(f"[3S UPLOAD SUCCESS] {file_path} → {s3_key}.")
+        logging.info(f"[S3 UPLOAD SUCCESS] {file_path} → {s3_key}.")
         
         return url
     
     except NoCredentialsError as e:
-        logging.error(f"[3S UPLOAD FAILED] {file_path} → {s3_key} | Error: {str(e)}")
+        logging.error(f"[S3 UPLOAD FAILED] {file_path} → {s3_key} | Error: {str(e)}")
         return None
 
 

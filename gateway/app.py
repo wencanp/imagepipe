@@ -161,30 +161,11 @@ def download_by_task_id(task_id):
         logger.warning(f"[DOWNLOAD] Expired download URL for task ID {task_id}")
         return _json_fail('[FAILURE] Download link expired', 410)
     
-    try:
-        response = requests.get(
-            record.result_url,
-            stream=True,
-            headers={'User-Agent': 'ImagePipe'}
-        )
-        response.raise_for_status()
-    except Exception as e:
-        logger.error(f"[DOWNLOAD] Error fetching file from MinIO: {e}")
-        return _json_fail('[FAILURE] Error retrieving file', 500)
-    
-    # filename extension based on process_type
-    if record.process_type == 'ocr':
-        download_name = f"{record.filename}.txt" if not record.filename.endswith('.txt') else record.filename
-    else:
-        download_name = record.filename
-    
-    logger.info(f"[DOWNLOAD] File '{download_name}' downloaded successful for {request.remote_addr}")
-    return send_file(
-        io.BytesIO(response.content),
-        as_attachment=True,
-        download_name=download_name,
-        mimetype='application/octet-stream'  # use generic binary stream type
-    )
+    logger.info(f"[DOWNLOAD] Returning presigned URL for task ID: {task_id}")
+    return jsonify({
+        'success': True,
+        'url': record.result_url
+    }), 200
 
 
 @app.route('/status/<task_id>', methods=['GET'])
