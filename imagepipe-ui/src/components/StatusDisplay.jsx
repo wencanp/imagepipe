@@ -15,10 +15,10 @@ const StatusDisplay = ({ taskId }) => {
 
     const checkStatus = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/status/${taskId}`);
+        const res = await axios.get(`${API_BASE}/api/status/${taskId}`);
         setStatus(res.data);
         if (res.data.message === 'SUCCESS') {
-          setDownloadUrl(`${API_BASE_URL}/api/download/task/${taskId}`);
+          setDownloadUrl(`${API_BASE}/api/download/task/${taskId}`);
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         } else if (res.data.message === 'FAILED') {

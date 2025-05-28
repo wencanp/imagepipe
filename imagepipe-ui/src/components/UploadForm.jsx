@@ -7,7 +7,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
   const [convertType, setConvertType] = useState('.png');
   const [quality, setQuality] = useState(60);
   const [filterType, setFilterType] = useState('BLUR');
-  const API_BASE_URL = process.env.RAILWAY_PRIVATE_DOMAIN;
+  const API_BASE = process.env.RAILWAY_PRIVATE_DOMAIN;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +26,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
     // ocr has no additional parameters
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/upload`, formData, {
+      const res = await axios.post(`${API_BASE}/api/upload`, formData, {
         transitional: {
           clarifyTimeoutError: true
         },
