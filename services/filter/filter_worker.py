@@ -49,7 +49,7 @@ def apply_filter(input_path, output_path, filter_type='BLUR'):
             original_format = "JPEG"
         img = img.convert("RGBA") if original_format == "PNG" else img.convert("RGB")
         img = img.filter(filter_mapping[filter_type])
-        local_tmp_path = f"/tmp/{output_path}"
+        local_tmp_path = f"/tmp/{os.path.basename(output_path)}"
         img.save(
             local_tmp_path, 
             format=original_format, 

@@ -27,7 +27,7 @@ def extract_text(input_path, output_path):
         img = img.convert("RGB")
         text = pytesseract.image_to_string(img)
 
-        local_tmp_path = f"/tmp/{output_path}"
+        local_tmp_path = f"/tmp/{os.path.basename(output_path)}"
         with open(local_tmp_path, "w", encoding="utf-8") as f:
             f.write(text)
 

@@ -42,7 +42,7 @@ def convert_image(input_path, output_path, convert_type, quality=60):
 
         # Convert, compress, and save the image
         img = img.convert("RGBA") if convert_type == ".png" else img.convert("RGB")
-        local_tmp_path = f"/tmp/{output_path}"
+        local_tmp_path = f"/tmp/{os.path.basename(output_path)}"
         img.save(
             local_tmp_path, 
             format=convert_type.strip('.').upper(), 
