@@ -23,6 +23,8 @@ from utils.s3_client import upload_file_to_s3
 
 app = create_app()
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+print(f"[DEBUG][GATEWAY] DB URI = {app.config['SQLALCHEMY_DATABASE_URI']}")
+
 
 celery_app = Celery('gateway', broker=os.getenv("REDIS_URL"), backend=os.getenv("REDIS_URL"))
 
@@ -77,8 +79,12 @@ def upload_file():
 
         # submit the async task to Celery
         task = extract_text.apply_async(
-            args=[s3_key, f"ocr/{processed_filename}"], 
-            queue="ocr_queue", task_id=task_id)
+            args=[s3_key, f"ocr/{processed_filename}"], queue="ocr_queue", task_id=task_id)
+        TaskRecord.create_record(
+            id=task_id,
+            filename=processed_filename,
+            process_type=process_type
+        )
 
         logger.info(f"[UPLOAD] OCR task submitted with ID: {task_id} from {request.remote_addr}")
         return jsonify({
@@ -92,8 +98,12 @@ def upload_file():
         processed_filename = f"{task_id}{os.path.splitext(file.filename)[-1]}"
 
         task = apply_filter.apply_async(
-            args=[s3_key, f"filter/{processed_filename}", filter_type], 
-            queue="filter_queue", task_id=task_id
+            args=[s3_key, f"filter/{processed_filename}", filter_type], queue="filter_queue", task_id=task_id
+        )
+        TaskRecord.create_record(
+            id=task_id,
+            filename=processed_filename,
+            process_type=process_type
         )
 
         logger.info(f"[UPLOAD] Filter task submitted with ID: {task_id} from {request.remote_addr}")
@@ -109,8 +119,12 @@ def upload_file():
         processed_filename = f"{task_id}{convert_type}"
 
         task = convert_image.apply_async(
-            args=[s3_key, f"convert/{processed_filename}", convert_type, quality], 
-            queue="convert_queue", task_id=task_id
+            args=[s3_key, f"convert/{processed_filename}", convert_type, quality], queue="convert_queue", task_id=task_id
+        )
+        TaskRecord.create_record(
+            id=task_id,
+            filename=processed_filename,
+            process_type=process_type
         )
 
         logger.info(f"[UPLOAD] Conversion task submitted with ID: {task_id} from {request.remote_addr}")
@@ -120,14 +134,6 @@ def upload_file():
             'task_id': task_id
         }), 200
 
-    task_record = TaskRecord(
-        id=task_id,
-        filename=processed_filename,
-        process_type=process_type,
-        status='PENDING'
-    )
-    db.session.add(task_record)
-    db.session.commit()
     logger.warning(f"[UPLOAD] Unknown process type '{process_type}' from {request.remote_addr}")
     return _json_fail('[FAILURE] Unknown process type', 400)
 

@@ -18,6 +18,8 @@ flask_app = create_app()
 
 @app.task(name="convert_worker.convert_image", queue='convert_queue')
 def convert_image(input_path, output_path, convert_type, quality=60):
+    print(f"[DEBUG][CELERY WORKER] DB URI = {flask_app.config['SQLALCHEMY_DATABASE_URI']}")
+
     try: 
         # Check if the input file exists
         try:
@@ -54,16 +56,22 @@ def convert_image(input_path, output_path, convert_type, quality=60):
         url = upload_file_to_s3(local_tmp_path, output_path)
         os.remove(local_tmp_path) 
 
-        with flask_app.app_context():
-            task_id = current_task.request.id
-            task_record = TaskRecord.query.get(task_id)
-            if task_record:
-                task_record.status = 'SUCCESS'
-                task_record.result_url = url
-                task_record.error_message = None
-                db.session.commit()
-            else:
-                return {"error": "Task record not found"}
+        TaskRecord.update_record(
+            current_task.request.id, 
+            status='SUCCESS', 
+            result_url=url, 
+            error_message=None
+        )
+        # with flask_app.app_context():
+        #     task_id = current_task.request.id
+        #     task_record = TaskRecord.query.get(task_id)
+        #     if task_record:
+        #         task_record.status = 'SUCCESS'
+        #         task_record.result_url = url
+        #         task_record.error_message = None
+        #         db.session.commit()
+        #     else:
+        #         return {"error": "Task record not found"}
 
         logger.info(f"Conversion success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
@@ -74,13 +82,18 @@ def convert_image(input_path, output_path, convert_type, quality=60):
         logger.error(f"Conversion failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None
         try:
-            with flask_app.app_context():
-                task_id = current_task.request.id
-                task_record = TaskRecord.query.get(task_id)
-                if task_record:
-                    task_record.status = 'FAILURE'
-                    task_record.error_message = str(e)
-                    db.session.commit()
+            TaskRecord.update_record(
+                current_task.request.id, 
+                status='FAILURE', 
+                error_message=str(e)
+            )
+            # with flask_app.app_context():
+            #     task_id = current_task.request.id
+            #     task_record = TaskRecord.query.get(task_id)
+            #     if task_record:
+            #         task_record.status = 'FAILURE'
+            #         task_record.error_message = str(e)
+            #         db.session.commit()
         except Exception:
             pass
         return f"Cnversion failed: {str(e)}"

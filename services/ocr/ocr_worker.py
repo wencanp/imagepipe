@@ -34,16 +34,12 @@ def extract_text(input_path, output_path):
         url = upload_file_to_s3(local_tmp_path, output_path)
         os.remove(local_tmp_path) 
 
-        with flask_app.app_context():
-            task_id = current_task.request.id
-            task_record = TaskRecord.query.get(task_id)
-            if task_record:
-                task_record.status = 'SUCCESS'
-                task_record.result_url = url
-                task_record.error_message = None
-                db.session.commit()
-            else:
-                return {"error": "Task record not found"}
+        TaskRecord.update_record(
+            current_task.request.id, 
+            status='SUCCESS', 
+            result_url=url,
+            error_message=None
+        )
 
         logger.info(f"OCR success - Task: {current_task.request.id} - Output: {output_path}. Start time [{start_time}] End time [{time.time()}]")
         return {
@@ -54,13 +50,11 @@ def extract_text(input_path, output_path):
         logger.error(f"OCR failed - Task: {current_task.request.id} - Error: {str(e)}. Start time [{start_time}] End time [{time.time()}]")
         task_record = None
         try:
-            with flask_app.app_context():
-                task_id = current_task.request.id
-                task_record = TaskRecord.query.get(task_id)
-                if task_record:
-                    task_record.status = 'FAILURE'
-                    task_record.error_message = str(e)
-                    db.session.commit()
+            TaskRecord.update_record(
+                current_task.request.id, 
+                status='FAILURE', 
+                error_message=str(e)
+            )
         except Exception:
             pass
         return f"OCR failed: {str(e)}"
