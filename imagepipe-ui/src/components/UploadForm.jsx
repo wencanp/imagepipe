@@ -7,7 +7,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
   const [convertType, setConvertType] = useState('.png');
   const [quality, setQuality] = useState(60);
   const [filterType, setFilterType] = useState('BLUR');
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://frontend.railway.internal';
+  const API_BASE = window.location.origin;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
