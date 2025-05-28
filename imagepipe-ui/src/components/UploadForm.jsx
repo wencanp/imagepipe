@@ -26,7 +26,7 @@ const UploadForm = ({ onTaskSubmitted }) => {
     // ocr has no additional parameters
 
     try {
-      const res = await axios.post(`${API_BASE}/api/upload`, formData, {
+      const res = await axios.post(`${API_BASE}/upload`, formData, {
         transitional: {
           clarifyTimeoutError: true
         },
