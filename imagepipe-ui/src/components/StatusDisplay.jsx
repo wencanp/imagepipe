@@ -6,7 +6,7 @@ const StatusDisplay = ({ taskId }) => {
   const [error, setError] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const intervalRef = useRef(null);
-  const API_BASE = window.location.origin;
+  const API_BASE = process.env.RAILWAY_PRIVATE_DOMAIN;
 
   useEffect(() => {
     if (!taskId) return;
@@ -15,10 +15,10 @@ const StatusDisplay = ({ taskId }) => {
 
     const checkStatus = async () => {
       try {
-        const res = await axios.get(`/api/status/${taskId}`);
+        const res = await axios.get(`${API_BASE_URL}/api/status/${taskId}`);
         setStatus(res.data);
         if (res.data.message === 'SUCCESS') {
-          setDownloadUrl(`/api/download/task/${taskId}`);
+          setDownloadUrl(`${API_BASE_URL}/api/download/task/${taskId}`);
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         } else if (res.data.message === 'FAILED') {
