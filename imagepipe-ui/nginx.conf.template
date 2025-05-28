@@ -37,9 +37,9 @@ http {
       # Set variable for dynamic proxy_pass
       set $upstream ${GATEWAY_URL};
       
-      # Strip /api prefix and proxy
+      # Remove /api prefix but keep the rest of the path
       rewrite ^/api/(.*) /$1 break;
-      proxy_pass $upstream;
+      proxy_pass $upstream$uri;
       
       add_header 'Access-Control-Allow-Origin' '*' always;
       add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
@@ -49,11 +49,16 @@ http {
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Original-URI $request_uri;
 
       proxy_ssl_verify off;
       proxy_ssl_server_name on;
       
       client_max_body_size 16M;
+
+      # Debug logging
+      error_log /var/log/nginx/error.log debug;
+      access_log /var/log/nginx/access.log combined;
     }
   }
 }
