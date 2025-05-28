@@ -6,7 +6,7 @@ const StatusDisplay = ({ taskId }) => {
   const [error, setError] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
   const intervalRef = useRef(null);
-  const API_BASE = process.env.REACT_APP_API_BASE;
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://frontend.railway.internal';
 
   useEffect(() => {
     if (!taskId) return;
