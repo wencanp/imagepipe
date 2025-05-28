@@ -19,7 +19,7 @@ def create_app():
     CORS(app, 
          origins=allowed_origins, 
          methods=["GET", "POST", "PUT", "DELETE", "OPTION"], 
-         allow_headers=["*"]
+         allow_headers=["*"],
          supports_credentials=True)
 
     # Managed database Supabase
