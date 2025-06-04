@@ -1,13 +1,14 @@
 <div align="center">
   <h1>ImagePipe</h1>
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://choosealicense.com/licenses/mit/)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://choosealicense.com/licenses/mit/)
 </div>
 
 **ImagePipe** is a lightweight, cloud-native image processing platform. It supports image compression, format conversion, filter effects and OCR text recognition (currently English only), with a design focused on scalability and flexible deployment. Users can upload an image to trigger asynchronous processing and receive a download link upon completion.
 
-Try it out  on 👉 [Demo](https://imagepipe.up.railway.app/)  
-Deployed on [Railway](https://railway.com/).
+Try it out on 👉 [Railway Demo](https://imagepipe.up.railway.app/)  
+More dev details in [README.dev](./README.dev.md)
+
 
 ## ✨ Features
 - Image upload & processing (convert / filter / OCR - English only)
@@ -34,8 +35,8 @@ curl -X POST https://imagepipe.up.railway.app/api/upload \
 ```
 ### Parameters
 1. **Conversion/Compress** (process_type=convert)
-  - convert_type: choose from ['.jpeg', '.png', '.gif', '.bmp']
-  - quality: int from 1-95
+    - convert_type: choose from ['.jpeg', '.png', '.gif', '.bmp']
+    - quality: int from 1-95
 2. **Filter** (process_type=filter)
-  - filter_type: choose from ['BLUR', 'CONTOUR', 'DETAIL', SHARPEN']
+    - filter_type: choose from ['BLUR', 'CONTOUR', 'DETAIL', SHARPEN']
 3. **OCR** (process_type=ocr)
