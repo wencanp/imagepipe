@@ -12,7 +12,17 @@ function App() {
         <UploadForm onTaskSubmitted={setTaskId} />
         <StatusDisplay taskId={taskId} />
       </div>
-      <footer className="mt-8 text-green-900 text-xs opacity-70 text-center">&copy; 2025 ImagePipe Demo</footer>
+      <footer className="mt-8 text-green-900 text-xs opacity-70 text-center">
+        &copy; 2025 - 2026 ImagePipe Demo &nbsp;|&nbsp;
+        <a 
+          href="https://github.com/wencanp/imagepipe" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="underline hover:opacity-100"
+        >
+          GitHub
+        </a>
+      </footer>
     </div>
   );
 }
