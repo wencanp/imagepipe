@@ -73,8 +73,3 @@ app.conf.beat_schedule = {
     }
 }
 app.conf.timezone = 'UTC'
-
-if __name__ == "__main__":
-    logger.info("Cleaner worker launched, executing task ... start time [{start_time}]")
-    # Execute the task immediately each runtime
-    clean_expired_files()
