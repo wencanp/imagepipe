@@ -1,12 +1,25 @@
+# Python
 venv/
+.venv/
 __pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Node
+node_modules/
+imagepipe-ui/build/
+
+# logs
 *.log
+
+# local files
 uploads/
-**/test.jpg
-**/test2.png
 data/
 minio_data/
 instance/
 postgres_data/
+
+# env
 .env
 *.env
