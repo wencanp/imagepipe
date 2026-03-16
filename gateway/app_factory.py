@@ -1,3 +1,4 @@
+from flasgger import Swagger
 from flask import Flask
 from flask_cors import CORS
 from database.models import db
@@ -34,4 +35,14 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
     migrate.init_app(app, db)
+
+    Swagger(app, template={
+        "info": {
+            "title": "ImagePipe API",
+            "description": "A lightweight image processing platform supporting convert, filter, and OCR.",
+            "version": "1.0.0"
+        },
+        "basePath": "/api",
+    })
+
     return app

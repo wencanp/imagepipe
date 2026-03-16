@@ -46,6 +46,48 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    """
+    Upload an image and submit a processing task
+    ---
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: file
+        in: formData
+        type: file
+        required: true
+        description: Image file to process (max 16MB)
+      - name: process_type
+        in: formData
+        type: string
+        required: true
+        enum: [convert, filter, ocr]
+        description: Type of processing to apply
+      - name: convert_type
+        in: formData
+        type: string
+        enum: [.jpeg, .png, .gif, .bmp]
+        description: (convert only) Target format
+      - name: quality
+        in: formData
+        type: integer
+        description: (convert only) Compression quality 1-95, default 60
+      - name: filter_type
+        in: formData
+        type: string
+        enum: [BLUR, CONTOUR, DETAIL, SHARPEN]
+        description: (filter only) Filter to apply
+    responses:
+      200:
+        description: Task submitted successfully
+        examples:
+          application/json:
+            success: true
+            message: "[SUCCESS] Conversion task submitted"
+            task_id: "f9432f84-368a-42d1-ace3-981e4fe6c71a"
+      400:
+        description: Bad request
+    """
     logger.info(f"[UPLOAD] Received upload request from {request.remote_addr}, Type: {request.content_type}")
 
     if 'file' not in request.files:
@@ -144,6 +186,25 @@ def download_file(filename):
 
 @app.route('/download/task/<task_id>', methods=['GET'])
 def download_by_task_id(task_id):
+    """
+    Get the presigned download URL for a completed task
+    ---
+    parameters:
+      - name: task_id
+        in: path
+        type: string
+        required: true
+        description: Task ID returned from /upload
+    responses:
+      200:
+        description: Presigned download URL
+        examples:
+          application/json:
+            success: true
+            url: "https://bucket.s3.amazonaws.com/output.png?X-Amz-Signature=..."
+      404:
+        description: Task not found or no result available
+    """
     logger.info(f"[DOWNLOAD] Download request for task ID: {task_id} from {request.remote_addr}")
     record = TaskRecord.query.get(task_id)
     if not record:
@@ -163,6 +224,26 @@ def download_by_task_id(task_id):
 
 @app.route('/status/<task_id>', methods=['GET'])
 def check_task_status(task_id):
+    """
+    Get the status of a submitted task
+    ---
+    parameters:
+      - name: task_id
+        in: path
+        type: string
+        required: true
+        description: Task ID returned from /upload
+    responses:
+      200:
+        description: Task status retrieved
+        examples:
+          application/json:
+            success: true
+            message: "SUCCESS"
+            task_id: "f9432f84-368a-42d1-ace3-981e4fe6c71a"
+      404:
+        description: Task not found
+    """
     logger.info(f"[STATUS] Checking status for task ID: {task_id} from {request.remote_addr}")
     record = TaskRecord.query.get(task_id)
     if not record:
@@ -181,6 +262,18 @@ def check_task_status(task_id):
 
 @app.route('/cleanup', methods=['POST'])
 def trigger_cleanup():
+    """
+    Manually trigger cleanup of expired files
+    ---
+    responses:
+      200:
+        description: Cleanup task triggered
+        examples:
+          application/json:
+            success: true
+            message: "[SUCCESS] Cleanup task triggered"
+            task_id: "a1b2c3d4-..."
+    """
     logger.info(f"[CLEANUP] Triggering cleanup task")
     task = clean_expired_files.apply_async(queue="cleaner_queue")
     return jsonify({
