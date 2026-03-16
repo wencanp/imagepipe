@@ -6,7 +6,8 @@
 
 **ImagePipe** is a lightweight, cloud-native image processing platform. It supports image compression, format conversion, filter effects and OCR text recognition (currently English only), with a design focused on scalability and flexible deployment. Users can upload an image to trigger asynchronous processing and receive a download link upon completion.
 
-Try it out on 👉 [Railway Demo](https://imagepipe.up.railway.app/)  
+Try it   👉 [Railway Demo](https://imagepipe.up.railway.app/)
+API Docs 👉 [Swagger UI](https://imagepipe.up.railway.app/api/apidocs)  
 More dev details in [README.dev](./README.dev.md)
 
 
