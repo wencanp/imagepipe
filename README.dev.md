@@ -26,11 +26,12 @@ A technical summary on building ImagePipe — documenting its structure, deploym
 - CronJobs for cleanup
 - Easy to extend with new worker types
 
-## 🎯 Limitations & TODOs
-- Docker🐳 ✅docker-compose ❌test passed (branch: local/docker)
-- CI/CD: one-command deployment
-- Add authentication
-- Remove minikube ✅yaml ✅secret & Ingress ❌self-hosting ❌ just learning not necessary
+## 🎯 TODOs
+- ✅ Docker🐳 docker-compose
+- ✅ Unit testing (100% coverage)
+- ✅ CI/CD (GitHub Actions)
+- ❌ Add authentication
+- Remove minikube ✅yaml ✅secret & Ingress ❌self-hosting 
 
 ## Other Details & thoughts
 - Logging usage
