@@ -42,7 +42,9 @@ def create_app():
             "description": "A lightweight image processing platform supporting convert, filter, and OCR.",
             "version": "1.0.0"
         },
+        "host": "imagepipe.up.railway.app",
         "basePath": "/api",
+        "schemes": ["https"],
     })
 
     return app
